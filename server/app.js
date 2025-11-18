@@ -5,7 +5,7 @@ const cors = require("cors");
 const transactionRoute = require("./routes/transactionRoute");
 const itemRoute = require("./routes/itemRoute");
 const categoryRoute = require("./routes/categoryRoute");
-const seedDatabase = require("./seeder/ItemSeeder");
+const seedDatabase = require("./seeder/SeedDatabase");
 
 require("dotenv").config();
 
@@ -17,6 +17,9 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Routes
+app.get("/", (req, res) => {
+  res.json({ message: "Backend from express" });
+});
 app.use("/api", transactionRoute);
 app.use("/api", itemRoute);
 app.use("/api", categoryRoute);

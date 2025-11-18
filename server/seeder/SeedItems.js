@@ -1,17 +1,6 @@
 const Item = require("../models/Item");
-const Category = require("../models/Category");
 
-async function seedDatabase() {
-  // Daftar kategori unik
-  const categories = ["food", "beverage", "dessert", "topping"];
-
-  // Insert kategori jika belum ada
-  const categoryMap = {};
-  for (const name of categories) {
-    const [cat] = await Category.findOrCreate({ where: { name } });
-    categoryMap[name] = cat.id;
-  }
-
+async function seedItems(categoryMap) {
   const count = await Item.count();
   if (count === 0) {
     await Item.bulkCreate([
@@ -48,4 +37,4 @@ async function seedDatabase() {
   }
 }
 
-module.exports = seedDatabase;
+module.exports = seedItems;
