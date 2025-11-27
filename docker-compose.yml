@@ -8,12 +8,8 @@ services:
     volumes:
       - ./server:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=root
-      - DB_NAME=kasir
+    env_file:
+      - ./server/.env
     depends_on:
       - db
 
@@ -25,8 +21,8 @@ services:
     volumes:
       - ./web:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
+    env_file:
+      - ./web/.env
     depends_on:
       - server
 

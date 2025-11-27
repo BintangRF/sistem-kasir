@@ -27,27 +27,13 @@ Frontend dikembangkan dengan:
 - Tailwind CSS
 - Ant Design (antd)
 
-#### Cara Menjalankan:
+#### Konfigurasi:
 
 Buat file `.env` di folder `web` dengan konfigurasi berikut:
 
 ```env
 VITE_API_URL=http://localhost:5000
 ```
-
-Lalu jalankan perintah berikut:
-
-```bash
-cd web
-npm install           # Menginstal semua dependensi
-npm run dev           # Menjalankan development server
-```
-
-Frontend akan berjalan di `http://localhost:5173` secara default.
-
-> **Credential login**:
-> Username: `admin`
-> Password: `password123`
 
 ---
 
@@ -58,28 +44,33 @@ Backend dikembangkan dengan:
 - Node.js (Express)
 - MySQL (sebagai database)
 
-#### Prasyarat:
+#### Konfigurasi:
 
-- Node.js dan npm
-- MySQL Server aktif
 - Buat file `.env` di folder `server` dengan konfigurasi berikut:
 
 ```env
-DB_HOST=localhost
+DB_HOST=db
 DB_USER=root
-DB_PASSWORD=
+DB_PASSWORD=root
 DB_NAME=kasir
 ```
 
-#### Cara Menjalankan:
+---
+
+## ▶️ Menjalankan dengan Docker Compose
+
+Pastikan file `docker-compose.yml`, `Dockerfile` untuk `web` dan `server`, serta `.env` sudah disiapkan.
+
+Jalankan aplikasi dengan:
 
 ```bash
-cd server
-npm install            # Menginstal semua dependensi
-node server.js         # Menjalankan server Express
+docker compose up -d --build
 ```
 
-Backend akan berjalan di `http://localhost:5000` (atau port lain jika ditentukan di `.env`).
+Akses:
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:5000`
 
 ---
 
