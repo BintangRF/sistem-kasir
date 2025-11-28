@@ -1,9 +1,8 @@
 import { useTransactions } from "../hooks/useTransactions";
 import React from "react";
-import { Modal, Button } from "antd";
+import { Modal } from "antd";
 import { IFormField, ReusableForm } from "../sharedComponent/ReusableForm";
-import { useCashier } from "../../context/CashierContext";
-
+import { useCashier } from "../context/CashierContext";
 export const Payment: React.FC = () => {
   const {
     showModal,
@@ -20,30 +19,35 @@ export const Payment: React.FC = () => {
     ...formValues,
     items: itemsForPayment,
     totalAmount: totalAmount,
-    change: Math.max(0, Number(formValues.amountReceived) - totalAmount),
   };
 
   const fields: IFormField[] = [
     { label: "Nama Pembeli", type: "text", name: "buyerName", required: true },
+
     {
       label: "Total Pembayaran",
       type: "number",
       name: "totalAmount",
-      value: initialValues.totalAmount,
-      disabled: true,
+      readOnly: true,
     },
+
     {
       label: "Jumlah Uang Diterima",
       type: "number",
       name: "amountReceived",
       required: true,
     },
+
     {
       label: "Kembalian",
       type: "number",
       name: "change",
-      value: initialValues.change,
-      disabled: true,
+      readOnly: true,
+      computeValue: (values) =>
+        Math.max(
+          0,
+          Number(values.amountReceived || 0) - Number(values.totalAmount || 0)
+        ),
     },
   ];
 
@@ -51,34 +55,22 @@ export const Payment: React.FC = () => {
 
   const handleOnChange = (updatedValues: any) => {
     const newValues = { ...formValues, ...updatedValues };
-
     setFormValues(newValues);
   };
 
-  const validateForm = () => {
-    for (const field of fields) {
-      if (
-        field.required &&
-        !initialValues[field.name as keyof typeof initialValues]
-      ) {
-        return false;
-      }
-    }
-    return true;
-  };
-
   const handleSubmit = async () => {
-    if (!validateForm()) return;
-
     const transaction = {
       ...initialValues,
       amountReceived: initialValues.amountReceived,
-      change: initialValues.change,
       items: selectedItems,
       transactionDate: new Date(),
     };
 
-    await handleCashTransaction(transaction, () => handlePaymentSuccess());
+    handleCashTransaction(transaction, {
+      onSuccess: () => {
+        handlePaymentSuccess();
+      },
+    });
   };
 
   return (

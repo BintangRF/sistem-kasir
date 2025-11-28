@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Modal } from "antd";
 import { IFormField, ReusableForm } from "../sharedComponent/ReusableForm";
 import { ReusableTable } from "../sharedComponent/ReusableTable";
-import { useCategories } from "../hooks/usecategories";
+import { useCategories } from "../hooks/useCategories";
 
 interface ICategoryDataProps {
   name: string;

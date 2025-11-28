@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
-import { Form, Input, InputNumber, Select, Checkbox, Button } from "antd";
+import React, { useEffect, useRef } from "react";
+import { Input, InputNumber, Select, Checkbox, Button } from "antd";
 import { formatNumber } from "../utils/formatNumber";
+import { Controller, useForm } from "react-hook-form";
 
 export interface IFormField {
   name: string;
@@ -10,6 +11,8 @@ export interface IFormField {
   value?: any;
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
+  computeValue?: (formValues: any) => any;
 }
 
 interface ReusableFormProps {
@@ -27,113 +30,163 @@ export const ReusableForm: React.FC<ReusableFormProps> = ({
   onSubmit,
   onChange,
   submitButton = true,
-  layout = "vertical",
 }) => {
-  const [form] = Form.useForm();
+  const { handleSubmit, control, watch, setValue } = useForm({
+    defaultValues: initialValues,
+  });
+
+  const values = watch();
 
   useEffect(() => {
-    form.setFieldsValue(initialValues);
-  }, [initialValues, form]);
+    fields.forEach((field) => {
+      if (field.computeValue) {
+        const computed = field.computeValue(values);
+        setValue(field.name, computed, { shouldValidate: true });
+      }
+    });
 
-  const handleFinish = (values: any) => {
-    if (onSubmit) {
-      onSubmit(values);
-    }
-  };
-
-  const handleValuesChange = (allValues: any) => {
-    if (onChange) {
-      onChange(allValues);
-    }
-  };
+    if (onChange) onChange(values);
+  }, [values]);
 
   const renderField = (field: IFormField) => {
-    const { name, label, type, options, required, disabled } = field;
+    const { name, label, type, required, options, disabled, readOnly } = field;
+    const rules = required ? { required: `${label} is required` } : undefined;
 
     switch (type) {
       case "text":
-        return (
-          <Form.Item
-            key={name}
-            name={name}
-            label={label}
-            rules={[{ required, message: `${label} is required` }]}
-          >
-            <Input disabled={disabled} />
-          </Form.Item>
-        );
-      case "number":
-        return (
-          <Form.Item
-            key={name}
-            name={name}
-            label={label}
-            rules={[{ required, message: `${label} is required` }]}
-          >
-            <InputNumber
-              disabled={disabled}
-              style={{ width: "100%" }}
-              formatter={(value) => formatNumber(Number(value))}
-              parser={(value) => (value ? value.replace(/\D/g, "") : "")}
-            />
-          </Form.Item>
-        );
-      case "select":
-        return (
-          <Form.Item
-            key={name}
-            name={name}
-            label={label}
-            rules={[{ required, message: `${label} is required` }]}
-          >
-            <Select disabled={disabled}>
-              {options?.map((option) => (
-                <Select.Option key={option.value} value={option.value}>
-                  {option.label}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-        );
-      case "checkbox":
-        return (
-          <Form.Item key={name} name={name} valuePropName="checked">
-            <Checkbox disabled={disabled}>{label}</Checkbox>
-          </Form.Item>
-        );
       case "password":
         return (
-          <Form.Item
-            key={name}
-            name={name}
-            label={label}
-            rules={[{ required, message: `${label} is required` }]}
-          >
-            <Input.Password disabled={disabled} />
-          </Form.Item>
+          <div key={name} style={{ marginBottom: 16 }}>
+            <label>{label}</label>
+            <Controller
+              name={name}
+              control={control}
+              rules={rules}
+              render={({ field, fieldState }) => (
+                <>
+                  {type === "text" && (
+                    <Input {...field} disabled={disabled} readOnly={readOnly} />
+                  )}
+                  {type === "password" && (
+                    <Input.Password
+                      {...field}
+                      disabled={disabled}
+                      readOnly={readOnly}
+                    />
+                  )}
+                  {fieldState.error && (
+                    <small style={{ color: "red" }}>
+                      {fieldState.error.message}
+                    </small>
+                  )}
+                </>
+              )}
+            />
+          </div>
         );
+
+      case "number":
+        return (
+          <div key={name} style={{ marginBottom: 16 }}>
+            <label>{label}</label>
+            <Controller
+              name={name}
+              control={control}
+              rules={rules}
+              render={({ field, fieldState }) => (
+                <>
+                  <InputNumber
+                    {...field}
+                    disabled={disabled}
+                    style={{ width: "100%" }}
+                    value={field.value}
+                    onChange={(val) => field.onChange(val)}
+                    formatter={(value) =>
+                      formatNumber(Number(value === undefined ? "" : value))
+                    }
+                    parser={(v) => (v ? String(v).replace(/\D/g, "") : "")}
+                    readOnly={readOnly}
+                  />
+                  {fieldState.error && (
+                    <small style={{ color: "red" }}>
+                      {fieldState.error.message}
+                    </small>
+                  )}
+                </>
+              )}
+            />
+          </div>
+        );
+
+      case "select":
+        return (
+          <div key={name} style={{ marginBottom: 16 }}>
+            <label>{label}</label>
+            <Controller
+              name={name}
+              control={control}
+              rules={rules}
+              render={({ field, fieldState }) => (
+                <>
+                  <Select
+                    {...field}
+                    disabled={disabled}
+                    style={{ width: "100%" }}
+                    onChange={(val) => field.onChange(val)}
+                    value={field.value}
+                  >
+                    {options?.map((opt) => (
+                      <Select.Option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </Select.Option>
+                    ))}
+                  </Select>
+
+                  {fieldState.error && (
+                    <small style={{ color: "red" }}>
+                      {fieldState.error.message}
+                    </small>
+                  )}
+                </>
+              )}
+            />
+          </div>
+        );
+
+      case "checkbox":
+        return (
+          <div key={name} style={{ marginBottom: 16 }}>
+            <Controller
+              name={name}
+              control={control}
+              render={({ field }) => (
+                <Checkbox
+                  {...field}
+                  checked={!!field.value}
+                  disabled={disabled}
+                  onChange={(e) => field.onChange(e.target.checked)}
+                >
+                  {label}
+                </Checkbox>
+              )}
+            />
+          </div>
+        );
+
       default:
         return null;
     }
   };
 
   return (
-    <Form
-      form={form}
-      onFinish={handleFinish}
-      initialValues={initialValues}
-      onValuesChange={handleValuesChange}
-      layout={layout}
-    >
+    <form onSubmit={handleSubmit(onSubmit || (() => {}))}>
       {fields.map((field) => renderField(field))}
 
       {submitButton && (
-        <Form.Item>
-          <Button type="primary" htmlType="submit">
-            Submit
-          </Button>
-        </Form.Item>
+        <Button type="primary" htmlType="submit">
+          Submit
+        </Button>
       )}
-    </Form>
+    </form>
   );
 };

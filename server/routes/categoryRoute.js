@@ -1,11 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const categoryController = require("../controller/categoryController");
+const authMiddleware = require("../middleware/AuthMiddleware");
 
-router.post("/categories", categoryController.createCategory);
-router.get("/categories", categoryController.getCategories);
-router.get("/categories/:id", categoryController.getCategoryById);
-router.put("/categories/:id", categoryController.updateCategory);
-router.delete("/categories/:id", categoryController.deleteCategory);
+router.use(authMiddleware);
+
+router.post("/create", categoryController.createCategory);
+router.get("/", categoryController.getCategories);
+router.get("/:id", categoryController.getCategoryById);
+router.put("/update/:id", categoryController.updateCategory);
+router.delete("/delete/:id", categoryController.deleteCategory);
 
 module.exports = router;

@@ -1,94 +1,76 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { axiosInstance } from "../utils/axiosInstance";
 import { NotifAlert } from "../sharedComponent/NotifAlert";
+import { useCashier } from "../context/CashierContext";
 
-interface ITransactionDataProps {
+export interface ITransactionDataProps {
   buyerName: string;
   amountReceived: number;
   items: Array<any>;
   totalAmount: number;
-  change: number;
   transactionDate: Date;
 }
 
 interface ApiResponse<T> {
-  [x: string]: any;
   data: T;
   message?: string;
 }
 
-export const API_URL = import.meta.env.VITE_API_URL;
+// --- API ---
+const fetchTransactions = async () => {
+  const res = await axiosInstance.get<ApiResponse<ITransactionDataProps[]>>(
+    "/api/transactions"
+  );
+  return res.data;
+};
 
+const createTransaction = async (payload: ITransactionDataProps) => {
+  const res = await axiosInstance.post<ApiResponse<ITransactionDataProps>>(
+    "/api/transactions/create",
+    payload
+  );
+  return res.data;
+};
+
+// --- Hook ---
 export const useTransactions = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorState, setErrorState] = useState("");
-  const [transactionData, setTransactionData] = useState<
-    ITransactionDataProps[]
-  >([]);
+  const qc = useQueryClient();
 
-  const handleApiCall = async <T>(
-    apiCall: () => Promise<ApiResponse<T>>,
-    onSuccess: (data: T) => void,
-    onError: (message: string) => void
-  ) => {
-    setIsLoading(true);
-    try {
-      const response = await apiCall();
-      onSuccess(response.data);
-      setErrorState("");
-    } catch (error: any) {
-      const errorMessage = error.message || "An error occurred";
-      setErrorState(errorMessage);
-      onError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // GET
+  const {
+    data: transactionData = [],
+    isLoading,
+    error,
+    refetch: getTransactions,
+  } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: fetchTransactions,
+  });
 
-  const getTransactions = async () => {
-    handleApiCall(
-      () => axios.get(`${API_URL}/api/transactions`),
-      (data) => setTransactionData(data),
-      (message) => console.error(message)
-    );
-  };
+  // POST
+  const { mutate: handleCashTransaction, isPending } = useMutation({
+    mutationFn: createTransaction,
+    onSuccess: () => {
+      NotifAlert({
+        type: "success",
+        message: "Pembayaran tunai berhasil.",
+      });
 
-  const handleCashTransaction = async (
-    transactionData: ITransactionDataProps,
-    onPaymentSuccess: () => void
-  ) => {
-    handleApiCall(
-      () =>
-        axios.post<ApiResponse<ITransactionDataProps>>(
-          `${API_URL}/api/transactions`,
-          transactionData
-        ),
-      (data) => {
-        NotifAlert({
-          type: "success",
-          message: "Pembayaran tunai berhasil.",
-        });
-        onPaymentSuccess();
-        return data;
-      },
-      (message) => {
-        NotifAlert({
-          type: "error",
-          message,
-        });
-      }
-    );
-  };
-
-  useEffect(() => {
-    getTransactions();
-  }, []);
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+    },
+    onError: (err: any) => {
+      NotifAlert({
+        type: "error",
+        message: err?.message ?? "An error occurred",
+      });
+    },
+  });
 
   return {
+    transactionData,
+    isLoading: isLoading || isPending,
+    errorState: error?.message ?? "",
     getTransactions,
     handleCashTransaction,
-    isLoading,
-    errorState,
-    transactionData,
   };
 };

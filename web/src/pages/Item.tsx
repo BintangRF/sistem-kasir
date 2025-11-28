@@ -4,7 +4,7 @@ import { useItem } from "../hooks/useItems";
 import { IFormField, ReusableForm } from "../sharedComponent/ReusableForm";
 import { ReusableTable } from "../sharedComponent/ReusableTable";
 import { formatNumber } from "../utils/formatNumber";
-import { useCategories } from "../hooks/usecategories";
+import { useCategories } from "../hooks/useCategories";
 
 interface IProductDataProps {
   name: string;

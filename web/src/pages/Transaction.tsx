@@ -19,9 +19,11 @@ interface Transaction {
 export const Transaction: React.FC = () => {
   const { transactionData, isLoading } = useTransactions();
 
+  const list = Array.isArray(transactionData) ? transactionData : [];
+
   const uniqueItems = Array.from(
     new Set(
-      transactionData.flatMap((transaction: Transaction) =>
+      list.flatMap((transaction: Transaction) =>
         transaction.items?.map((subItem: Item) => subItem.name)
       )
     )

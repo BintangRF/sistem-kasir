@@ -1,7 +1,7 @@
 import { Button, List, Typography, Divider, Space, Card, Row, Col } from "antd";
 import React, { useState, useEffect } from "react";
-import { useCashier } from "../../context/CashierContext";
 import { formatNumber } from "../utils/formatNumber";
+import { useCashier } from "../context/CashierContext";
 
 const { Text, Title } = Typography;
 

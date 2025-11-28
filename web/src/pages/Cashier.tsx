@@ -2,8 +2,8 @@ import React from "react";
 import { Row, Col } from "antd";
 import { SelectedItems } from "../components/SelectedItems";
 import { Payment } from "../components/Payment";
-import { CashierProvider } from "../../context/CashierContext";
 import { ItemList } from "../components/ItemList";
+import { CashierProvider } from "../context/CashierContext";
 
 export const Cashier: React.FC = () => {
   return (

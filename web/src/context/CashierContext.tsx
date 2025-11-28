@@ -1,6 +1,7 @@
+// CashierContext.tsx
 import React, { useState } from "react";
 
-interface IItemProps {
+export interface IItemProps {
   id: number;
   name: string;
   price: number;
@@ -12,10 +13,12 @@ interface ICashierContextProps {
   setSelectedItems: React.Dispatch<React.SetStateAction<IItemProps[]>>;
   showModal: boolean;
   setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
-  buyerName: string;
-  setBuyerName: React.Dispatch<React.SetStateAction<string>>;
-  amountReceived: string;
-  setAmountReceived: React.Dispatch<React.SetStateAction<string>>;
+  formValues: {
+    buyerName: string;
+    amountReceived: number;
+    [k: string]: any;
+  };
+  setFormValues: React.Dispatch<React.SetStateAction<any>>;
   handleSelectItem: (item: IItemProps) => void;
   handleRemoveItem: (id: number) => void;
   handleShowModal: () => void;
@@ -23,8 +26,6 @@ interface ICashierContextProps {
   handlePaymentSuccess: () => void;
   totalAmount: number;
   itemsForPayment: { name: string; price: number; quantity: number }[];
-  formValues: any;
-  setFormValues: React.Dispatch<React.SetStateAction<any>>;
 }
 
 const CashierContext = React.createContext<ICashierContextProps | undefined>(
@@ -36,8 +37,7 @@ export const CashierProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [selectedItems, setSelectedItems] = useState<IItemProps[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [buyerName, setBuyerName] = useState("");
-  const [amountReceived, setAmountReceived] = useState("");
+
   const [formValues, setFormValues] = useState<any>({
     buyerName: "",
     amountReceived: "",
@@ -58,27 +58,31 @@ export const CashierProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleRemoveItem = (id: number) => {
     const existingItem = selectedItems.find((item) => item.id === id);
-    if (existingItem && existingItem.quantity! > 1) {
-      setSelectedItems(
-        selectedItems.map((i) =>
-          i.id === id ? { ...i, quantity: i.quantity! - 1 } : i
+    if (existingItem && (existingItem.quantity || 0) > 1) {
+      setSelectedItems((prev) =>
+        prev.map((i) =>
+          i.id === id ? { ...i, quantity: (i.quantity || 0) - 1 } : i
         )
       );
     } else {
-      setSelectedItems(selectedItems.filter((i) => i.id !== id));
+      setSelectedItems((prev) => prev.filter((i) => i.id !== id));
     }
   };
 
   const handleShowModal = () => setShowModal(true);
+
+  const resetFormValues = () =>
+    setFormValues({
+      buyerName: "",
+      amountReceived: "",
+    });
+
   const handleCloseModal = () => {
     setShowModal(false);
-    setBuyerName("");
-    setAmountReceived("");
+    resetFormValues();
   };
 
   const handlePaymentSuccess = () => {
-    setBuyerName("");
-    setAmountReceived("");
     setSelectedItems([]);
     handleCloseModal();
   };
@@ -101,10 +105,8 @@ export const CashierProvider: React.FC<{ children: React.ReactNode }> = ({
         setSelectedItems,
         showModal,
         setShowModal,
-        buyerName,
-        setBuyerName,
-        amountReceived,
-        setAmountReceived,
+        formValues,
+        setFormValues,
         handleSelectItem,
         handleRemoveItem,
         handleShowModal,
@@ -112,8 +114,6 @@ export const CashierProvider: React.FC<{ children: React.ReactNode }> = ({
         handlePaymentSuccess,
         totalAmount,
         itemsForPayment,
-        formValues,
-        setFormValues,
       }}
     >
       {children}

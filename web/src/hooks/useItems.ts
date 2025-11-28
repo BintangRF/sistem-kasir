@@ -1,127 +1,124 @@
-import axios from "axios";
-import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { axiosInstance } from "../utils/axiosInstance";
 import { NotifAlert } from "../sharedComponent/NotifAlert";
 
-interface IItemProps {
+export interface IItemProps {
+  id: string;
   name: string;
   price: number;
   categoryId: number;
   category: {
     name: string;
   };
-  id: string;
 }
 
 interface ApiResponse<T> {
-  [x: string]: any;
   data: T;
   message?: string;
 }
 
-export const API_URL = import.meta.env.VITE_API_URL;
+// ---- API ----
+const fetchItems = async () => {
+  const res = await axiosInstance.get<ApiResponse<IItemProps[]>>("/api/items");
+  return res.data;
+};
 
+const createItemApi = async (payload: IItemProps) => {
+  const res = await axiosInstance.post<ApiResponse<IItemProps>>(
+    "/api/items/create",
+    payload
+  );
+  return res.data;
+};
+
+const updateItemApi = async (payload: IItemProps) => {
+  const res = await axiosInstance.put<ApiResponse<IItemProps>>(
+    `/api/items/update/${payload.id}`,
+    payload
+  );
+  return res.data;
+};
+
+const deleteItemApi = async (id: string) => {
+  const res = await axiosInstance.delete<ApiResponse<IItemProps>>(
+    `/api/items/delete/${id}`
+  );
+  return res.data;
+};
+
+// ---- Hook ----
 export const useItem = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorState, setErrorState] = useState("");
-  const [itemsData, setItemsData] = useState<IItemProps[]>([]);
+  const qc = useQueryClient();
 
-  const handleApiCall = async <T>(
-    apiCall: () => Promise<ApiResponse<T>>,
-    onSuccess: (data: T) => void,
-    onError: (message: string) => void
-  ) => {
-    setIsLoading(true);
-    try {
-      const response = await apiCall();
-      onSuccess(response.data);
-      setErrorState("");
-    } catch (error: any) {
-      const errorMessage = error.message || "An error occurred";
-      setErrorState(errorMessage);
-      onError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // GET
+  const {
+    data: itemsData = [],
+    isLoading,
+    error,
+    refetch: getItems,
+  } = useQuery({
+    queryKey: ["items"],
+    queryFn: fetchItems,
+  });
 
-  const getItems = async () => {
-    handleApiCall(
-      () => axios.get(`${API_URL}/api/items`),
-      (data) => setItemsData(data),
-      (message) => console.error(message)
-    );
-  };
+  // CREATE
+  const { mutate: createItem } = useMutation({
+    mutationFn: createItemApi,
+    onSuccess: () => {
+      NotifAlert({
+        type: "success",
+        message: "Penambahan item berhasil.",
+      });
+      qc.invalidateQueries({ queryKey: ["items"] });
+    },
+    onError: (err: any) => {
+      NotifAlert({
+        type: "error",
+        message: err?.message ?? "An error occurred",
+      });
+    },
+  });
 
-  const createItem = async (itemData: IItemProps) => {
-    handleApiCall(
-      () =>
-        axios.post<ApiResponse<IItemProps>>(`${API_URL}/api/items`, itemData),
-      (data) => {
-        NotifAlert({
-          type: "success",
-          message: "Penambahan Item berhasil.",
-        });
-        getItems();
-        return data;
-      },
-      (message) => {
-        NotifAlert({
-          type: "error",
-          message,
-        });
-      }
-    );
-  };
+  // UPDATE
+  const { mutate: updateItem } = useMutation({
+    mutationFn: updateItemApi,
+    onSuccess: () => {
+      NotifAlert({
+        type: "success",
+        message: "Update item berhasil.",
+      });
+      qc.invalidateQueries({ queryKey: ["items"] });
+    },
+    onError: (err: any) => {
+      NotifAlert({
+        type: "error",
+        message: err?.message ?? "An error occurred",
+      });
+    },
+  });
 
-  const updateItem = async (itemData: IItemProps) => {
-    handleApiCall(
-      () =>
-        axios.put<ApiResponse<IItemProps>>(
-          `${API_URL}/api/items/${itemData.id}`,
-          itemData
-        ),
-      (data) => {
-        NotifAlert({
-          type: "success",
-          message: "Update Item berhasil.",
-        });
-        getItems();
-        return data;
-      },
-      (message) => {
-        NotifAlert({
-          type: "error",
-          message,
-        });
-      }
-    );
-  };
-
-  const deleteItem = async (itemId: string) => {
-    handleApiCall(
-      () =>
-        axios.delete<ApiResponse<IItemProps>>(`${API_URL}/api/items/${itemId}`),
-      (data) => {
-        NotifAlert({
-          type: "success",
-          message: "Delete Item berhasil.",
-        });
-        getItems();
-        return data;
-      },
-      (message) => {
-        NotifAlert({
-          type: "error",
-          message,
-        });
-      }
-    );
-  };
+  // DELETE
+  const { mutate: deleteItem } = useMutation({
+    mutationFn: deleteItemApi,
+    onSuccess: () => {
+      NotifAlert({
+        type: "success",
+        message: "Delete item berhasil.",
+      });
+      qc.invalidateQueries({ queryKey: ["items"] });
+    },
+    onError: (err: any) => {
+      NotifAlert({
+        type: "error",
+        message: err?.message ?? "An error occurred",
+      });
+    },
+  });
 
   return {
-    isLoading,
-    errorState,
     itemsData,
+    isLoading,
+    errorState: error?.message ?? "",
     getItems,
     createItem,
     updateItem,

@@ -1,30 +1,29 @@
 import { Route, Routes, useLocation, Navigate } from "react-router-dom";
 import { Layout, Row, Col } from "antd";
-import "./App.css";
 import { Cashier } from "./pages/Cashier";
 import Sidebar from "./sharedComponent/Sidebar";
 import { Transaction } from "./pages/Transaction";
 import { Item } from "./pages/Item";
 import Login from "./pages/Login";
 import { Category } from "./pages/Category";
+import { useAuth } from "./hooks/useAuth";
 
 const { Content, Sider } = Layout;
 
 const PrivateRoute = ({ element }: { element: JSX.Element }) => {
-  const token = localStorage.getItem("token");
-  return token ? element : <Navigate to="/login" />;
+  const { profileData, isProfileLoading, isProfileError } = useAuth();
+
+  if (isProfileLoading) return null;
+
+  if (isProfileError || !profileData) {
+    return <Navigate to="/login" />;
+  }
+
+  return element;
 };
 
 function App() {
   const location = useLocation();
-
-  const setToken = (token: string | null) => {
-    if (token) {
-      localStorage.setItem("token", token);
-    } else {
-      localStorage.removeItem("token");
-    }
-  };
 
   return (
     <Layout>
@@ -41,7 +40,7 @@ function App() {
               style={{ paddingRight: "2rem", paddingLeft: "2rem" }}
             >
               <Routes>
-                <Route path="/login" element={<Login setToken={setToken} />} />
+                <Route path="/login" element={<Login />} />
                 <Route
                   path="/"
                   element={<PrivateRoute element={<Transaction />} />}
