@@ -1,76 +1,37 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { axiosInstance } from "../utils/axiosInstance";
-import { NotifAlert } from "../sharedComponent/NotifAlert";
-import { useCashier } from "../context/CashierContext";
+import { transactionsService } from "../services/transactionsService";
 
-export interface ITransactionDataProps {
-  buyerName: string;
-  amountReceived: number;
-  items: Array<any>;
-  totalAmount: number;
-  transactionDate: Date;
-}
-
-interface ApiResponse<T> {
-  data: T;
-  message?: string;
-}
-
-// --- API ---
-const fetchTransactions = async () => {
-  const res = await axiosInstance.get<ApiResponse<ITransactionDataProps[]>>(
-    "/api/transactions"
-  );
-  return res.data;
-};
-
-const createTransaction = async (payload: ITransactionDataProps) => {
-  const res = await axiosInstance.post<ApiResponse<ITransactionDataProps>>(
-    "/api/transactions/create",
-    payload
-  );
-  return res.data;
-};
-
-// --- Hook ---
-export const useTransactions = () => {
+export const useTransactions = (opts?: {
+  onSuccess?: (type: "create") => void;
+  onError?: (type: "create", err: any) => void;
+}) => {
   const qc = useQueryClient();
 
-  // GET
   const {
-    data: transactionData = [],
+    data: transactionsData = [],
     isLoading,
     error,
-    refetch: getTransactions,
   } = useQuery({
     queryKey: ["transactions"],
-    queryFn: fetchTransactions,
+    queryFn: transactionsService.fetch,
   });
 
-  // POST
-  const { mutate: handleCashTransaction, isPending } = useMutation({
-    mutationFn: createTransaction,
+  const createTransaction = useMutation({
+    mutationFn: transactionsService.create,
     onSuccess: () => {
-      NotifAlert({
-        type: "success",
-        message: "Pembayaran tunai berhasil.",
-      });
-
       qc.invalidateQueries({ queryKey: ["transactions"] });
+      opts?.onSuccess?.("create");
     },
-    onError: (err: any) => {
-      NotifAlert({
-        type: "error",
-        message: err?.message ?? "An error occurred",
-      });
-    },
+    onError: (err) => opts?.onError?.("create", err),
   });
 
   return {
-    transactionData,
-    isLoading: isLoading || isPending,
-    errorState: error?.message ?? "",
-    getTransactions,
-    handleCashTransaction,
+    transactionsData,
+    isLoading,
+    error,
+
+    createTransaction: createTransaction.mutate,
+    errorMutate: createTransaction.isError,
+    isLoadingMutate: createTransaction.isPending,
   };
 };

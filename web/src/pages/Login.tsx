@@ -1,24 +1,42 @@
 import React from "react";
 import { Input, Button, Form } from "antd";
 import { useForm, Controller } from "react-hook-form";
-import { IAuthProps, useAuth } from "../hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
+import { IAuthPayloadProps } from "../interface/interfaces";
+import { NotifAlert } from "../sharedComponent/NotifAlert";
+import { useNavigate } from "react-router-dom";
 
 const Login: React.FC = () => {
-  const { authLogin, isPending } = useAuth();
+  const navigate = useNavigate();
+
+  const { login, isLoadingLogin } = useAuth({
+    onSuccess: () => {
+      NotifAlert({ type: "success", message: "berhasil login" });
+      localStorage.setItem("isLogin", "true");
+      navigate("/");
+    },
+
+    onError: (type, err) => {
+      NotifAlert({
+        type: "error",
+        message: err.message ?? `${type} error`,
+      });
+    },
+  });
 
   const {
     handleSubmit,
     control,
     formState: { errors },
-  } = useForm<IAuthProps>({
+  } = useForm<IAuthPayloadProps>({
     defaultValues: {
       username: "",
       password: "",
     },
   });
 
-  const onSubmit = (data: IAuthProps) => {
-    authLogin(data);
+  const onSubmit = (data: IAuthPayloadProps) => {
+    login(data);
   };
 
   return (
@@ -57,7 +75,13 @@ const Login: React.FC = () => {
           />
         </Form.Item>
 
-        <Button type="primary" htmlType="submit" block loading={isPending}>
+        <Button
+          type="primary"
+          htmlType="submit"
+          block
+          disabled={isLoadingLogin}
+          loading={isLoadingLogin}
+        >
           Login
         </Button>
       </form>

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { Tabs, List, Typography, Space, Spin, Card } from "antd";
-import { useItem } from "../hooks/useItems";
+import { useItems } from "../hooks/useItems";
 import { formatNumber } from "../utils/formatNumber";
 import { useCashier } from "../context/CashierContext";
 
@@ -8,11 +8,7 @@ const { Text, Title } = Typography;
 
 export const ItemList: React.FC = () => {
   const { handleSelectItem } = useCashier();
-  const { itemsData, getItems, isLoading } = useItem();
-
-  useEffect(() => {
-    getItems();
-  }, []);
+  const { itemsData, isLoading } = useItems();
 
   const groupedItems = useMemo(() => {
     return Object.values(itemsData).reduce((acc: any, item: any) => {

@@ -1,36 +1,45 @@
 import React, { useEffect, useState } from "react";
 import { Modal } from "antd";
-import { useItem } from "../hooks/useItems";
+import { useItems } from "../hooks/useItems";
 import { IFormField, ReusableForm } from "../sharedComponent/ReusableForm";
 import { ReusableTable } from "../sharedComponent/ReusableTable";
 import { formatNumber } from "../utils/formatNumber";
 import { useCategories } from "../hooks/useCategories";
-
-interface IProductDataProps {
-  name: string;
-  price: number;
-  categoryId: number;
-  category: {
-    name: string;
-  };
-}
+import { NotifAlert } from "../sharedComponent/NotifAlert";
+import { IItemTableProps } from "../interface/interfaces";
 
 export const Item = () => {
-  const { itemsData, getItems, createItem, updateItem, deleteItem, isLoading } =
-    useItem();
   const {
-    categoriesData,
-    getCategories,
-    isLoading: isLoadingCategories,
-  } = useCategories();
+    itemsData,
+    createItem,
+    updateItem,
+    deleteItem,
+    isLoading,
+    isLoadingCreate,
+    isLoadingUpdate,
+  } = useItems({
+    onSuccess: (type) => {
+      const msg = {
+        create: "data berhasil ditambahkan",
+        update: "perbaruan data berhasil",
+        delete: "data berhasil dihapus",
+      }[type];
+
+      NotifAlert({ type: "success", message: msg });
+    },
+
+    onError: (type, err) => {
+      NotifAlert({
+        type: "error",
+        message: err.message ?? `${type} error`,
+      });
+    },
+  });
+
+  const { categoriesData, isLoading: isLoadingCategories } = useCategories();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
-
-  useEffect(() => {
-    getItems();
-    getCategories();
-  }, []);
 
   // List Columns
   const columns = [
@@ -38,7 +47,7 @@ export const Item = () => {
       key: "name",
       title: "Name",
       dataIndex: "name",
-      sorter: (a: IProductDataProps, b: IProductDataProps) =>
+      sorter: (a: IItemTableProps, b: IItemTableProps) =>
         a.name.localeCompare(b.name),
     },
     {
@@ -46,7 +55,7 @@ export const Item = () => {
       title: "Price",
       dataIndex: "price",
       render: (price: number) => formatNumber(price) + " IDR",
-      sorter: (a: IProductDataProps, b: IProductDataProps) => a.price - b.price,
+      sorter: (a: IItemTableProps, b: IItemTableProps) => a.price - b.price,
     },
     {
       key: "categoryId",
@@ -56,7 +65,7 @@ export const Item = () => {
     },
   ];
 
-  const dataSource: IProductDataProps[] = Object.values(itemsData);
+  const dataSource: IItemTableProps[] = Object.values(itemsData) || [];
 
   // Form CRUD
   const fields: IFormField[] = [
@@ -129,6 +138,7 @@ export const Item = () => {
           fields={fields}
           initialValues={editingItem}
           onSubmit={handleSubmit}
+          isLoading={isLoadingCreate || isLoadingUpdate}
         />
       </Modal>
     </div>

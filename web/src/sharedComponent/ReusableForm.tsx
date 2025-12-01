@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { Input, InputNumber, Select, Checkbox, Button } from "antd";
 import { formatNumber } from "../utils/formatNumber";
 import { Controller, useForm } from "react-hook-form";
@@ -22,6 +22,7 @@ interface ReusableFormProps {
   onChange?: (updatedValues: any) => void;
   submitButton?: boolean;
   layout?: "horizontal" | "vertical" | "inline";
+  isLoading?: boolean;
 }
 
 export const ReusableForm: React.FC<ReusableFormProps> = ({
@@ -30,6 +31,7 @@ export const ReusableForm: React.FC<ReusableFormProps> = ({
   onSubmit,
   onChange,
   submitButton = true,
+  isLoading,
 }) => {
   const { handleSubmit, control, watch, setValue } = useForm({
     defaultValues: initialValues,
@@ -183,7 +185,12 @@ export const ReusableForm: React.FC<ReusableFormProps> = ({
       {fields.map((field) => renderField(field))}
 
       {submitButton && (
-        <Button type="primary" htmlType="submit">
+        <Button
+          type="primary"
+          htmlType="submit"
+          disabled={isLoading}
+          loading={isLoading}
+        >
           Submit
         </Button>
       )}

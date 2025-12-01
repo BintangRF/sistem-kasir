@@ -11,13 +11,18 @@ import { useAuth } from "./hooks/useAuth";
 const { Content, Sider } = Layout;
 
 const PrivateRoute = ({ element }: { element: JSX.Element }) => {
-  const { profileData, isProfileLoading, isProfileError } = useAuth();
+  const isLogin = localStorage.getItem("isLogin") === "true";
+
+  if (!isLogin) return <Navigate to="/login" />;
+
+  const { profileData, isProfileLoading, isProfileError } = useAuth({
+    enabled: isLogin,
+  });
 
   if (isProfileLoading) return null;
 
-  if (isProfileError || !profileData) {
+  if (isProfileError || !profileData || !isLogin)
     return <Navigate to="/login" />;
-  }
 
   return element;
 };

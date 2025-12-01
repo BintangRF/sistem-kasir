@@ -1,16 +1,12 @@
 // CashierContext.tsx
 import React, { useState } from "react";
-
-export interface IItemProps {
-  id: number;
-  name: string;
-  price: number;
-  quantity?: number;
-}
+import { ICashierItemListProps } from "../interface/interfaces";
 
 interface ICashierContextProps {
-  selectedItems: IItemProps[];
-  setSelectedItems: React.Dispatch<React.SetStateAction<IItemProps[]>>;
+  selectedItems: ICashierItemListProps[];
+  setSelectedItems: React.Dispatch<
+    React.SetStateAction<ICashierItemListProps[]>
+  >;
   showModal: boolean;
   setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
   formValues: {
@@ -19,7 +15,7 @@ interface ICashierContextProps {
     [k: string]: any;
   };
   setFormValues: React.Dispatch<React.SetStateAction<any>>;
-  handleSelectItem: (item: IItemProps) => void;
+  handleSelectItem: (item: ICashierItemListProps) => void;
   handleRemoveItem: (id: number) => void;
   handleShowModal: () => void;
   handleCloseModal: () => void;
@@ -35,7 +31,9 @@ const CashierContext = React.createContext<ICashierContextProps | undefined>(
 export const CashierProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [selectedItems, setSelectedItems] = useState<IItemProps[]>([]);
+  const [selectedItems, setSelectedItems] = useState<ICashierItemListProps[]>(
+    []
+  );
   const [showModal, setShowModal] = useState(false);
 
   const [formValues, setFormValues] = useState<any>({
@@ -43,7 +41,7 @@ export const CashierProvider: React.FC<{ children: React.ReactNode }> = ({
     amountReceived: "",
   });
 
-  const handleSelectItem = (item: IItemProps) => {
+  const handleSelectItem = (item: ICashierItemListProps) => {
     setSelectedItems((prevItems) => {
       const existingItem = prevItems.find((i) => i.id === item.id);
       if (existingItem) {

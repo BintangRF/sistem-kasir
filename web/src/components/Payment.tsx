@@ -3,6 +3,8 @@ import React from "react";
 import { Modal } from "antd";
 import { IFormField, ReusableForm } from "../sharedComponent/ReusableForm";
 import { useCashier } from "../context/CashierContext";
+import { NotifAlert } from "../sharedComponent/NotifAlert";
+
 export const Payment: React.FC = () => {
   const {
     showModal,
@@ -51,7 +53,22 @@ export const Payment: React.FC = () => {
     },
   ];
 
-  const { handleCashTransaction, isLoading, errorState } = useTransactions();
+  const { createTransaction, isLoadingMutate, errorMutate } = useTransactions({
+    onSuccess: (type) => {
+      const msg = {
+        create: "data berhasil ditambahkan",
+      }[type];
+
+      NotifAlert({ type: "success", message: msg });
+    },
+
+    onError: (type, err) => {
+      NotifAlert({
+        type: "error",
+        message: err.message ?? `${type} error`,
+      });
+    },
+  });
 
   const handleOnChange = (updatedValues: any) => {
     const newValues = { ...formValues, ...updatedValues };
@@ -66,7 +83,7 @@ export const Payment: React.FC = () => {
       transactionDate: new Date(),
     };
 
-    handleCashTransaction(transaction, {
+    createTransaction(transaction, {
       onSuccess: () => {
         handlePaymentSuccess();
       },
@@ -81,13 +98,13 @@ export const Payment: React.FC = () => {
       centered
       footer={null}
     >
-      {isLoading && <p>Loading...</p>}
-      {errorState && <p>Error: {errorState}</p>}
+      {errorMutate && <p>Error: {errorMutate}</p>}
       <ReusableForm
         fields={fields}
         initialValues={initialValues}
         onSubmit={handleSubmit}
         onChange={handleOnChange}
+        isLoading={isLoadingMutate}
       />
     </Modal>
   );

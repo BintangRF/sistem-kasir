@@ -1,127 +1,58 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { axiosInstance } from "../utils/axiosInstance";
-import { NotifAlert } from "../sharedComponent/NotifAlert";
+import { itemService } from "../services/itemsService";
 
-export interface IItemProps {
-  id: string;
-  name: string;
-  price: number;
-  categoryId: number;
-  category: {
-    name: string;
-  };
-}
-
-interface ApiResponse<T> {
-  data: T;
-  message?: string;
-}
-
-// ---- API ----
-const fetchItems = async () => {
-  const res = await axiosInstance.get<ApiResponse<IItemProps[]>>("/api/items");
-  return res.data;
-};
-
-const createItemApi = async (payload: IItemProps) => {
-  const res = await axiosInstance.post<ApiResponse<IItemProps>>(
-    "/api/items/create",
-    payload
-  );
-  return res.data;
-};
-
-const updateItemApi = async (payload: IItemProps) => {
-  const res = await axiosInstance.put<ApiResponse<IItemProps>>(
-    `/api/items/update/${payload.id}`,
-    payload
-  );
-  return res.data;
-};
-
-const deleteItemApi = async (id: string) => {
-  const res = await axiosInstance.delete<ApiResponse<IItemProps>>(
-    `/api/items/delete/${id}`
-  );
-  return res.data;
-};
-
-// ---- Hook ----
-export const useItem = () => {
+export const useItems = (opts?: {
+  onSuccess?: (type: "create" | "update" | "delete") => void;
+  onError?: (type: "create" | "update" | "delete", err: any) => void;
+}) => {
   const qc = useQueryClient();
 
-  // GET
   const {
     data: itemsData = [],
     isLoading,
     error,
-    refetch: getItems,
   } = useQuery({
     queryKey: ["items"],
-    queryFn: fetchItems,
+    queryFn: itemService.fetch,
   });
 
-  // CREATE
-  const { mutate: createItem } = useMutation({
-    mutationFn: createItemApi,
+  const createItem = useMutation({
+    mutationFn: itemService.create,
     onSuccess: () => {
-      NotifAlert({
-        type: "success",
-        message: "Penambahan item berhasil.",
-      });
       qc.invalidateQueries({ queryKey: ["items"] });
+      opts?.onSuccess?.("create");
     },
-    onError: (err: any) => {
-      NotifAlert({
-        type: "error",
-        message: err?.message ?? "An error occurred",
-      });
-    },
+    onError: (err) => opts?.onError?.("create", err),
   });
 
-  // UPDATE
-  const { mutate: updateItem } = useMutation({
-    mutationFn: updateItemApi,
+  const updateItem = useMutation({
+    mutationFn: itemService.update,
     onSuccess: () => {
-      NotifAlert({
-        type: "success",
-        message: "Update item berhasil.",
-      });
       qc.invalidateQueries({ queryKey: ["items"] });
+      opts?.onSuccess?.("update");
     },
-    onError: (err: any) => {
-      NotifAlert({
-        type: "error",
-        message: err?.message ?? "An error occurred",
-      });
-    },
+    onError: (err) => opts?.onError?.("update", err),
   });
 
-  // DELETE
-  const { mutate: deleteItem } = useMutation({
-    mutationFn: deleteItemApi,
+  const deleteItem = useMutation({
+    mutationFn: itemService.delete,
     onSuccess: () => {
-      NotifAlert({
-        type: "success",
-        message: "Delete item berhasil.",
-      });
       qc.invalidateQueries({ queryKey: ["items"] });
+      opts?.onSuccess?.("delete");
     },
-    onError: (err: any) => {
-      NotifAlert({
-        type: "error",
-        message: err?.message ?? "An error occurred",
-      });
-    },
+    onError: (err) => opts?.onError?.("delete", err),
   });
 
   return {
     itemsData,
     isLoading,
-    errorState: error?.message ?? "",
-    getItems,
-    createItem,
-    updateItem,
-    deleteItem,
+    error,
+
+    createItem: createItem.mutate,
+    updateItem: updateItem.mutate,
+    deleteItem: deleteItem.mutate,
+
+    isLoadingCreate: createItem.isPending,
+    isLoadingUpdate: createItem.isPending,
   };
 };

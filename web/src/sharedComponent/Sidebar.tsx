@@ -1,40 +1,79 @@
 import React from "react";
-import { Layout, Menu } from "antd";
-import { Link, useLocation } from "react-router-dom";
+import { Layout, Menu, Button } from "antd";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   HomeOutlined,
   UserOutlined,
   AppstoreOutlined,
   OrderedListOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
+import { useAuth } from "../hooks/useAuth";
+import { NotifAlert } from "./NotifAlert";
 
 const { Sider } = Layout;
 
-const menuItems = [
-  {
-    key: "1",
-    icon: <HomeOutlined />,
-    label: <Link to="/">Transactions</Link>,
-  },
-  {
-    key: "2",
-    icon: <AppstoreOutlined />,
-    label: <Link to="/items">Products</Link>,
-  },
-  {
-    key: "3",
-    icon: <OrderedListOutlined />,
-    label: <Link to="/category">Category</Link>,
-  },
-  {
-    key: "4",
-    icon: <UserOutlined />,
-    label: <Link to="/cashier">Cashier</Link>,
-  },
-];
-
 const Sidebar = () => {
+  const navigate = useNavigate();
+
+  const { logout } = useAuth({
+    onSuccess: () => {
+      navigate("/login");
+      localStorage.removeItem("isLogin");
+    },
+    onError: (_, err) => {
+      NotifAlert({
+        type: "error",
+        message: err.message ?? "Logout error",
+      });
+    },
+  });
+
   const location = useLocation();
+
+  const menuItems = [
+    {
+      key: "1",
+      icon: <HomeOutlined />,
+      label: <Link to="/">Transactions</Link>,
+    },
+    {
+      key: "2",
+      icon: <AppstoreOutlined />,
+      label: <Link to="/items">Products</Link>,
+    },
+    {
+      key: "3",
+      icon: <OrderedListOutlined />,
+      label: <Link to="/category">Category</Link>,
+    },
+    {
+      key: "4",
+      icon: <UserOutlined />,
+      label: <Link to="/cashier">Cashier</Link>,
+    },
+
+    // Tambahkan ini
+    {
+      key: "logout",
+      icon: <LogoutOutlined />,
+      label: (
+        <Button
+          type="text"
+          danger
+          style={{
+            padding: "0 0",
+            width: "100%",
+            display: "flex",
+            justifyContent: "flex-start",
+          }}
+          onClick={() => logout()}
+        >
+          Logout
+        </Button>
+      ),
+    },
+  ];
 
   const getSelectedKeys = () => {
     switch (location.pathname) {
@@ -54,7 +93,6 @@ const Sidebar = () => {
   return (
     <Sider
       width={200}
-      className="site-layout-background"
       style={{
         position: "fixed",
         left: 0,
@@ -65,7 +103,7 @@ const Sidebar = () => {
     >
       <Menu
         mode="inline"
-        defaultSelectedKeys={getSelectedKeys()}
+        selectedKeys={getSelectedKeys()}
         items={menuItems}
         style={{ height: "100vh", borderRight: 0, padding: "0 10px 0 10px" }}
       />
