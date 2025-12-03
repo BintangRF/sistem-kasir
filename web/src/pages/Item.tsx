@@ -1,12 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Modal } from "antd";
-import { useItems } from "../hooks/useItems";
-import { IFormField, ReusableForm } from "../sharedComponent/ReusableForm";
+import { IItemsFormInputs, itemsSchema, useItems } from "../hooks/useItems";
 import { ReusableTable } from "../sharedComponent/ReusableTable";
 import { formatNumber } from "../utils/formatNumber";
 import { useCategories } from "../hooks/useCategories";
 import { NotifAlert } from "../sharedComponent/NotifAlert";
-import { IItemTableProps } from "../interface/interfaces";
+import { FormWrapper } from "../sharedComponent/FormWrapper";
+import { FormInputText } from "../sharedComponent/FormInputText";
+import { FormInputSelect } from "../sharedComponent/FormInputSelect";
+import { FormButton } from "../sharedComponent/FormButton";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { IItemResponseProps } from "../interface/interfaces";
+import { FormInputNumber } from "../sharedComponent/FormInputNumber";
 
 export const Item = () => {
   const {
@@ -18,28 +24,26 @@ export const Item = () => {
     isLoadingCreate,
     isLoadingUpdate,
   } = useItems({
-    onSuccess: (type) => {
-      const msg = {
-        create: "data berhasil ditambahkan",
-        update: "perbaruan data berhasil",
-        delete: "data berhasil dihapus",
-      }[type];
-
-      NotifAlert({ type: "success", message: msg });
+    onSuccess: (res) => {
+      NotifAlert({ type: "success", message: res?.message ?? "Success" });
     },
 
-    onError: (type, err) => {
+    onError: (err) => {
+      console.error(err);
+      const msg = err?.response?.data?.message ?? "Error";
+
       NotifAlert({
         type: "error",
-        message: err.message ?? `${type} error`,
+        message: msg,
       });
     },
   });
 
   const { categoriesData, isLoading: isLoadingCategories } = useCategories();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [selectedItem, setSelectedItem] = useState<IItemResponseProps | null>(
+    null
+  );
 
   // List Columns
   const columns = [
@@ -47,7 +51,7 @@ export const Item = () => {
       key: "name",
       title: "Name",
       dataIndex: "name",
-      sorter: (a: IItemTableProps, b: IItemTableProps) =>
+      sorter: (a: IItemResponseProps, b: IItemResponseProps) =>
         a.name.localeCompare(b.name),
     },
     {
@@ -55,7 +59,8 @@ export const Item = () => {
       title: "Price",
       dataIndex: "price",
       render: (price: number) => formatNumber(price) + " IDR",
-      sorter: (a: IItemTableProps, b: IItemTableProps) => a.price - b.price,
+      sorter: (a: IItemResponseProps, b: IItemResponseProps) =>
+        a.price - b.price,
     },
     {
       key: "categoryId",
@@ -65,53 +70,35 @@ export const Item = () => {
     },
   ];
 
-  const dataSource: IItemTableProps[] = Object.values(itemsData) || [];
+  const categoriesOptions = Object.values(categoriesData).map((c: any) => ({
+    label: c.name,
+    value: c.id,
+  }));
 
-  // Form CRUD
-  const fields: IFormField[] = [
-    {
-      name: "name",
-      label: "Item Name",
-      type: "text",
-      required: true,
-    },
-    {
-      name: "price",
-      label: "Price",
-      type: "number",
-      required: true,
-    },
-    {
-      name: "categoryId",
-      label: "Category",
-      type: "select",
-      required: true,
-      options: Object.values(categoriesData).map((cat: any) => ({
-        label: cat.name,
-        value: cat.id,
-      })),
-    },
-  ];
+  const form = useForm<IItemsFormInputs>({
+    resolver: zodResolver(itemsSchema),
+  });
 
-  const handleSubmit = (values: any) => {
-    if (editingItem) {
-      updateItem({ ...editingItem, ...values });
-    } else {
-      createItem(values);
-    }
-
-    setEditingItem(null);
-    setIsModalOpen(false);
+  const handleAdd = () => {
+    setSelectedItem({
+      id: 0,
+      name: "",
+      price: 0,
+      categoryId: 0,
+      category: { name: "" },
+    });
   };
 
-  const handleEdit = (item: any) => {
-    setEditingItem(item);
-    setIsModalOpen(true);
+  const handleEdit = (item: IItemResponseProps) => {
+    setSelectedItem(item);
   };
 
-  const closeModal = () => {
-    setEditingItem(null);
-    setIsModalOpen(false);
+  const handleSubmit = (values: IItemsFormInputs) => {
+    const payload = { ...values, id: selectedItem?.id ?? 0 };
+    if (payload.id && payload.id !== 0) updateItem(payload);
+    else createItem(payload);
+
+    setSelectedItem(null);
   };
 
   return (
@@ -120,26 +107,45 @@ export const Item = () => {
       <h2>Items Management</h2>
 
       <ReusableTable
-        data={dataSource}
+        data={itemsData}
         columns={columns}
-        onAdd={() => setIsModalOpen(true)}
+        onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={deleteItem}
       />
 
       <Modal
-        title={editingItem ? "Edit Item" : "Add Item"}
-        open={isModalOpen}
-        onCancel={closeModal}
+        title={selectedItem?.id ? "Edit Item" : "Add Item"}
+        open={!!selectedItem}
+        onCancel={() => setSelectedItem(null)}
         footer={null}
       >
-        <ReusableForm
-          key={editingItem ? editingItem.id : "new"}
-          fields={fields}
-          initialValues={editingItem}
-          onSubmit={handleSubmit}
-          isLoading={isLoadingCreate || isLoadingUpdate}
-        />
+        <FormWrapper form={form} onSubmit={handleSubmit}>
+          <FormInputText
+            name="name"
+            defaultValue={selectedItem?.name}
+            placeholder="Item name"
+          />
+          <FormInputNumber
+            defaultValue={selectedItem?.price}
+            name="price"
+            placeholder="Price"
+          />
+
+          <FormInputSelect
+            name="categoryId"
+            defaultValue={selectedItem?.categoryId}
+            placeholder="Select category"
+            options={categoriesOptions}
+          />
+
+          <FormButton
+            disabled={isLoadingCreate || isLoadingUpdate}
+            loading={isLoadingCreate || isLoadingUpdate}
+          >
+            Submit
+          </FormButton>
+        </FormWrapper>
       </Modal>
     </div>
   );

@@ -1,24 +1,22 @@
 // categoriesService.ts
-import { ApiResponse, ICategoryPayloadProps } from "../interface/interfaces";
+import { ICategoriesFormInputs } from "../hooks/useCategories";
 import { axiosInstance } from "../utils/axiosInstance";
 
 export const categoriesService = {
   fetch: () =>
-    axiosInstance
-      .get<ApiResponse<ICategoryPayloadProps[]>>("/api/categories")
-      .then((res) => res.data),
+    axiosInstance.get("/api/categories").then((res) => res.data.data),
 
-  create: (payload: ICategoryPayloadProps) =>
+  create: (payload: ICategoriesFormInputs) =>
     axiosInstance
       .post("/api/categories/create", payload)
       .then((res) => res.data),
 
-  update: (payload: ICategoryPayloadProps) =>
+  update: (payload: ICategoriesFormInputs) =>
     axiosInstance
       .put(`/api/categories/update/${payload.id}`, payload)
       .then((res) => res.data),
 
-  delete: (id: string) =>
+  delete: (id: number) =>
     axiosInstance
       .delete(`/api/categories/delete/${id}`)
       .then((res) => res.data),

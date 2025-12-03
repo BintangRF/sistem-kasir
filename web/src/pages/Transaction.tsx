@@ -3,9 +3,10 @@ import { ReusableTable } from "../sharedComponent/ReusableTable";
 import { useTransactions } from "../hooks/useTransactions";
 import { formatNumber } from "../utils/formatNumber";
 import {
-  IItemTransactionTableProps,
-  ITransactionTableProps,
+  IItemTransactionsProps,
+  ITransactionResponseProps,
 } from "../interface/interfaces";
+import { formatDate } from "../utils/formatDate";
 
 export const Transaction: React.FC = () => {
   const { transactionsData, isLoading } = useTransactions();
@@ -14,27 +15,36 @@ export const Transaction: React.FC = () => {
 
   const uniqueItems = Array.from(
     new Set(
-      list.flatMap((transaction: ITransactionTableProps) =>
+      list.flatMap((transaction: ITransactionResponseProps) =>
         transaction.items?.map(
-          (subItem: IItemTransactionTableProps) => subItem.name
+          (subItem: IItemTransactionsProps) => subItem.name
         )
       )
     )
   );
 
+  console.log(transactionsData);
+
   const columns = [
     {
       title: "Buyer Name",
       dataIndex: "buyerName",
-      sorter: (a: ITransactionTableProps, b: ITransactionTableProps) =>
+      sorter: (a: ITransactionResponseProps, b: ITransactionResponseProps) =>
         a.buyerName.localeCompare(b.buyerName),
     },
     {
       title: "Total Amount",
       dataIndex: "totalAmount",
       render: (amount: number) => formatNumber(amount) + " IDR",
-      sorter: (a: ITransactionTableProps, b: ITransactionTableProps) =>
+      sorter: (a: ITransactionResponseProps, b: ITransactionResponseProps) =>
         a.totalAmount - b.totalAmount,
+    },
+    {
+      title: "Amount Received",
+      dataIndex: "amountReceived",
+      render: (amount: number) => formatNumber(amount) + " IDR",
+      sorter: (a: ITransactionResponseProps, b: ITransactionResponseProps) =>
+        a.amountReceived - b.amountReceived,
     },
     {
       title: "Items",
@@ -42,7 +52,7 @@ export const Transaction: React.FC = () => {
       filterType: "select",
       filterOptions: uniqueItems.map((item) => ({ label: item, value: item })),
       multiSelect: true,
-      render: (items: IItemTransactionTableProps[]) => (
+      render: (items: IItemTransactionsProps[]) => (
         <div>
           {items.map((item) => (
             <div key={item.id}>
@@ -56,8 +66,8 @@ export const Transaction: React.FC = () => {
       title: "Transaction Date",
       dataIndex: "transactionDate",
       filterType: "date",
-      render: (text: string) => new Date(text).toLocaleString(),
-      sorter: (a: ITransactionTableProps, b: ITransactionTableProps) =>
+      render: (text: string) => formatDate(text),
+      sorter: (a: ITransactionResponseProps, b: ITransactionResponseProps) =>
         new Date(a.transactionDate).getTime() -
         new Date(b.transactionDate).getTime(),
     },
@@ -66,7 +76,8 @@ export const Transaction: React.FC = () => {
   if (isLoading) return <p>Loading...</p>;
 
   // Transform transactionData to an array
-  const dataSource: ITransactionTableProps[] = Object.values(transactionsData);
+  const dataSource: ITransactionResponseProps[] =
+    Object.values(transactionsData);
 
   return (
     <div>

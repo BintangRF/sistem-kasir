@@ -5,9 +5,15 @@ exports.createCategory = async (req, res) => {
 
   try {
     const newCategory = await Category.create({ name });
-    res.status(201).json({ newCategory });
+    res.status(201).json({
+      data: newCategory,
+      message: "Category created successfully",
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      data: null,
+      message: error.message,
+    });
   }
 };
 
@@ -17,9 +23,15 @@ exports.getCategories = async (req, res) => {
       order: [["name", "ASC"]],
     });
 
-    res.status(200).json(categories);
+    res.status(200).json({
+      data: categories,
+      message: "Categories fetched successfully",
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      data: null,
+      message: error.message,
+    });
   }
 };
 
@@ -32,7 +44,10 @@ exports.getCategoryById = async (req, res) => {
     if (!category)
       return res.status(404).json({ message: "Category not found" });
 
-    res.status(200).json({ category });
+    res.status(200).json({
+      data: category,
+      message: "Category fetched successfully",
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -45,12 +60,19 @@ exports.updateCategory = async (req, res) => {
   try {
     const updatedCategory = await Category.findByPk(id);
 
-    if (!updatedCategory)
-      return res.status(404).json({ message: "Category not found" });
+    if (!updatedCategory) {
+      return res.status(404).json({
+        data: null,
+        message: "Category not found",
+      });
+    }
 
     await updatedCategory.update({ name });
 
-    res.status(200).json({ updatedCategory });
+    res.status(200).json({
+      data: updatedCategory,
+      message: "Category updated successfully",
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -67,8 +89,14 @@ exports.deleteCategory = async (req, res) => {
 
     await deletedCategory.destroy();
 
-    res.status(200).json({ message: "Category deleted" });
+    res.status(200).json({
+      data: null,
+      message: "Category deleted successfully",
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      data: null,
+      message: error.message,
+    });
   }
 };

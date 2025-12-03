@@ -2,34 +2,46 @@ const { Transaction, TransactionItem } = require("../models/Transaction");
 
 exports.getTransactions = async (req, res) => {
   try {
-    let transactions = await Transaction.findAll({
+    const transactions = await Transaction.findAll({
       include: [
         {
           model: TransactionItem,
           as: "items",
         },
       ],
-      Transaction: [["transactionDate", "DESC"]],
+      order: [["transactionDate", "DESC"]],
     });
 
-    res.json(transactions);
+    res.status(200).json({
+      data: transactions,
+      message: "Transactions fetched successfully",
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error fetching transactions" });
+    res.status(500).json({
+      data: null,
+      message: error.message || "Error fetching transactions",
+    });
   }
 };
 
 exports.postTransaction = async (req, res) => {
   try {
-    const { buyerName, amountReceived, items, totalAmount, transactionDate } =
-      req.body;
+    const { buyerName, amountReceived, items, totalAmount } = req.body;
+
+    if (amountReceived < totalAmount) {
+      return res.status(400).json({
+        data: null,
+        message:
+          "The amount of money not received may be less than the total payment.",
+      });
+    }
 
     const newTransaction = await Transaction.create(
       {
         buyerName,
         totalAmount,
         amountReceived,
-        transactionDate,
         items: items.map((item) => ({
           name: item.name,
           price: item.price,
@@ -42,11 +54,14 @@ exports.postTransaction = async (req, res) => {
     );
 
     res.status(201).json({
+      data: newTransaction,
       message: "Transaction created successfully",
-      Transaction: newTransaction,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Error creating transaction" });
+    res.status(500).json({
+      data: null,
+      message: error.message || "Error creating transaction",
+    });
   }
 };

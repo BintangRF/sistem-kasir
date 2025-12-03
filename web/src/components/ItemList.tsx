@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Tabs, List, Typography, Space, Spin, Card } from "antd";
 import { useItems } from "../hooks/useItems";
 import { formatNumber } from "../utils/formatNumber";

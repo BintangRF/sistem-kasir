@@ -1,9 +1,18 @@
-import { useTransactions } from "../hooks/useTransactions";
-import React from "react";
+import {
+  ITransactionsFormInputs,
+  transactionsSchema,
+  useTransactions,
+} from "../hooks/useTransactions";
+import React, { useEffect } from "react";
 import { Modal } from "antd";
-import { IFormField, ReusableForm } from "../sharedComponent/ReusableForm";
-import { useCashier } from "../context/CashierContext";
 import { NotifAlert } from "../sharedComponent/NotifAlert";
+import { FormWrapper } from "../sharedComponent/FormWrapper";
+import { FormInputText } from "../sharedComponent/FormInputText";
+import { FormInputNumber } from "../sharedComponent/FormInputNumber";
+import { useForm } from "react-hook-form";
+import { FormButton } from "../sharedComponent/FormButton";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useCashier } from "../context/CashierContext";
 
 export const Payment: React.FC = () => {
   const {
@@ -12,100 +21,101 @@ export const Payment: React.FC = () => {
     handlePaymentSuccess,
     selectedItems,
     totalAmount,
-    itemsForPayment,
-    formValues,
-    setFormValues,
+    clearSelectedItems,
   } = useCashier();
 
-  const initialValues = {
-    ...formValues,
-    items: itemsForPayment,
-    totalAmount: totalAmount,
-  };
-
-  const fields: IFormField[] = [
-    { label: "Nama Pembeli", type: "text", name: "buyerName", required: true },
-
-    {
-      label: "Total Pembayaran",
-      type: "number",
-      name: "totalAmount",
-      readOnly: true,
+  const { createTransaction, isLoadingMutate } = useTransactions({
+    onSuccess: (res) => {
+      clearSelectedItems();
+      handlePaymentSuccess();
+      NotifAlert({
+        type: "success",
+        message: res?.message ?? "Success",
+      });
     },
+    onError: (err) => {
+      console.error(err);
+      const msg = err?.response?.data?.message ?? "Error";
 
-    {
-      label: "Jumlah Uang Diterima",
-      type: "number",
-      name: "amountReceived",
-      required: true,
-    },
-
-    {
-      label: "Kembalian",
-      type: "number",
-      name: "change",
-      readOnly: true,
-      computeValue: (values) =>
-        Math.max(
-          0,
-          Number(values.amountReceived || 0) - Number(values.totalAmount || 0)
-        ),
-    },
-  ];
-
-  const { createTransaction, isLoadingMutate, errorMutate } = useTransactions({
-    onSuccess: (type) => {
-      const msg = {
-        create: "data berhasil ditambahkan",
-      }[type];
-
-      NotifAlert({ type: "success", message: msg });
-    },
-
-    onError: (type, err) => {
       NotifAlert({
         type: "error",
-        message: err.message ?? `${type} error`,
+        message: msg,
       });
     },
   });
 
-  const handleOnChange = (updatedValues: any) => {
-    const newValues = { ...formValues, ...updatedValues };
-    setFormValues(newValues);
-  };
+  const form = useForm<ITransactionsFormInputs>({
+    resolver: zodResolver(transactionsSchema),
+  });
 
-  const handleSubmit = async () => {
-    const transaction = {
-      ...initialValues,
-      amountReceived: initialValues.amountReceived,
+  // Calculate change
+  useEffect(() => {
+    const sub = form.watch((v) => {
+      const change = Number(v.amountReceived || 0) - Number(v.totalAmount || 0);
+      const safe = change > 0 ? change : 0;
+
+      if (safe !== form.getValues("change")) {
+        form.setValue("change", safe, {
+          shouldDirty: false,
+          shouldTouch: false,
+          shouldValidate: false,
+        });
+      }
+    });
+    return () => sub.unsubscribe();
+  }, [form, selectedItems]);
+
+  const handleSubmit = (values: ITransactionsFormInputs) => {
+    const payload = {
+      ...values,
       items: selectedItems,
       transactionDate: new Date(),
     };
 
-    createTransaction(transaction, {
-      onSuccess: () => {
-        handlePaymentSuccess();
-      },
-    });
+    if (!Array.isArray(selectedItems) || selectedItems.length === 0) {
+      NotifAlert({ type: "error", message: "Tidak ada item yang dipilih." });
+      return;
+    }
+
+    createTransaction(payload);
   };
 
   return (
     <Modal
+      title="Create Transaction"
       open={showModal}
-      title="Payment Form"
       onCancel={handleCloseModal}
-      centered
       footer={null}
     >
-      {errorMutate && <p>Error: {errorMutate}</p>}
-      <ReusableForm
-        fields={fields}
-        initialValues={initialValues}
-        onSubmit={handleSubmit}
-        onChange={handleOnChange}
-        isLoading={isLoadingMutate}
-      />
+      <FormWrapper form={form} onSubmit={handleSubmit}>
+        <FormInputText
+          name="buyerName"
+          defaultValue=""
+          placeholder="Nama Pembeli"
+        />
+
+        <FormInputNumber
+          name="totalAmount"
+          defaultValue={totalAmount}
+          placeholder="Total Pembayaran"
+          readonly
+        />
+
+        <FormInputNumber
+          name="amountReceived"
+          defaultValue={0}
+          placeholder="Jumlah Uang Diterima"
+        />
+
+        <FormInputNumber
+          name="change"
+          defaultValue={0}
+          placeholder="Kembalian"
+          readonly
+        />
+
+        <FormButton loading={isLoadingMutate}>Pay</FormButton>
+      </FormWrapper>
     </Modal>
   );
 };

@@ -10,7 +10,7 @@ interface ReusableTableProps {
   columns: any[];
   onAdd?: () => void;
   onEdit?: (record: any) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: number) => void;
   showExport?: boolean;
 }
 

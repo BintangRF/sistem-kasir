@@ -1,5 +1,5 @@
 import React from "react";
-import { Layout, Menu, Button } from "antd";
+import { Layout, Menu } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   HomeOutlined,
@@ -33,60 +33,35 @@ const Sidebar = () => {
 
   const menuItems = [
     {
-      key: "1",
+      key: "/",
       icon: <HomeOutlined />,
       label: <Link to="/">Transactions</Link>,
     },
     {
-      key: "2",
+      key: "/items",
       icon: <AppstoreOutlined />,
       label: <Link to="/items">Products</Link>,
     },
     {
-      key: "3",
+      key: "/category",
       icon: <OrderedListOutlined />,
       label: <Link to="/category">Category</Link>,
     },
     {
-      key: "4",
+      key: "/cashier",
       icon: <UserOutlined />,
       label: <Link to="/cashier">Cashier</Link>,
     },
-
-    // Tambahkan ini
     {
       key: "logout",
       icon: <LogoutOutlined />,
-      label: (
-        <Button
-          type="text"
-          danger
-          style={{
-            padding: "0 0",
-            width: "100%",
-            display: "flex",
-            justifyContent: "flex-start",
-          }}
-          onClick={() => logout()}
-        >
-          Logout
-        </Button>
-      ),
+      label: "Logout",
     },
   ];
 
-  const getSelectedKeys = () => {
-    switch (location.pathname) {
-      case "/":
-        return ["1"];
-      case "/items":
-        return ["2"];
-      case "/category":
-        return ["3"];
-      case "/cashier":
-        return ["4"];
-      default:
-        return [];
+  const handleMenuClick = (e: { key: string }) => {
+    if (e.key === "logout") {
+      logout();
     }
   };
 
@@ -103,9 +78,10 @@ const Sidebar = () => {
     >
       <Menu
         mode="inline"
-        selectedKeys={getSelectedKeys()}
+        selectedKeys={[location.pathname]}
         items={menuItems}
-        style={{ height: "100vh", borderRight: 0, padding: "0 10px 0 10px" }}
+        onClick={handleMenuClick}
+        style={{ height: "100vh", borderRight: 0, padding: "0 10px" }}
       />
     </Sider>
   );

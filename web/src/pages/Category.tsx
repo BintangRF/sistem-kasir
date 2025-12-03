@@ -1,10 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal } from "antd";
-import { IFormField, ReusableForm } from "../sharedComponent/ReusableForm";
 import { ReusableTable } from "../sharedComponent/ReusableTable";
-import { useCategories } from "../hooks/useCategories";
+import {
+  categoriesSchema,
+  ICategoriesFormInputs,
+  useCategories,
+} from "../hooks/useCategories";
 import { NotifAlert } from "../sharedComponent/NotifAlert";
-import { ICategoryTableProps } from "../interface/interfaces";
+import { FormButton } from "../sharedComponent/FormButton";
+import { FormWrapper } from "../sharedComponent/FormWrapper";
+import { FormInputText } from "../sharedComponent/FormInputText";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ICategoriesResponseProps } from "../interface/interfaces";
 
 export const Category = () => {
   const {
@@ -16,69 +24,48 @@ export const Category = () => {
     isLoadingCreate,
     isLoadingUpdate,
   } = useCategories({
-    onSuccess: (type) => {
-      const msg = {
-        create: "data berhasil ditambahkan",
-        update: "perbaruan data berhasil",
-        delete: "data berhasil dihapus",
-      }[type];
+    onSuccess: (res) =>
+      NotifAlert({ type: "success", message: res?.message ?? "Success" }),
 
-      NotifAlert({ type: "success", message: msg });
-    },
-
-    onError: (type, err) => {
+    onError: (err) =>
       NotifAlert({
         type: "error",
-        message: err.message ?? `${type} error`,
-      });
-    },
+        message: err?.response?.data?.message ?? "Error",
+      }),
   });
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<any | null>(null);
-
-  // List Columns
   const columns = [
     {
       key: "name",
       title: "Name",
       dataIndex: "name",
-      sorter: (a: ICategoryTableProps, b: ICategoryTableProps) =>
+      sorter: (a: ICategoriesResponseProps, b: ICategoriesResponseProps) =>
         a.name.localeCompare(b.name),
     },
   ];
 
-  const dataSource: ICategoryTableProps[] = Object.values(categoriesData);
+  const [selectedCategory, setSelectedCategory] =
+    useState<ICategoriesResponseProps | null>(null);
 
-  // form CRUD
-  const fields: IFormField[] = [
-    {
-      name: "name",
-      label: "Category Name",
-      type: "text",
-      required: true,
-    },
-  ];
+  // Form setup
+  const form = useForm<ICategoriesFormInputs>({
+    resolver: zodResolver(categoriesSchema),
+  });
 
-  const handleSubmit = (values: any) => {
-    if (editingCategory) {
-      updateCategory({ ...editingCategory, ...values });
-    } else {
-      createCategory(values);
-    }
-
-    setEditingCategory(null);
-    setIsModalOpen(false);
+  const handleAdd = () => {
+    setSelectedCategory({ id: 0, name: "" });
   };
 
-  const handleEdit = (category: any) => {
-    setEditingCategory(category);
-    setIsModalOpen(true);
+  const handleEdit = (category: ICategoriesResponseProps) => {
+    setSelectedCategory(category);
   };
 
-  const closeModal = () => {
-    setEditingCategory(null);
-    setIsModalOpen(false);
+  const handleSubmit = (values: ICategoriesFormInputs) => {
+    const payload = { ...values, id: selectedCategory?.id ?? 0 };
+    if (payload.id && payload.id !== 0) updateCategory(payload);
+    else createCategory(values);
+
+    setSelectedCategory(null);
   };
 
   return (
@@ -87,26 +74,33 @@ export const Category = () => {
       <h2>Categories Management</h2>
 
       <ReusableTable
-        data={dataSource}
+        data={categoriesData}
         columns={columns}
-        onAdd={() => setIsModalOpen(true)}
+        onAdd={handleAdd}
         onEdit={handleEdit}
         onDelete={deleteCategory}
       />
 
       <Modal
-        title={editingCategory ? "Edit Category" : "Add Category"}
-        open={isModalOpen}
-        onCancel={closeModal}
+        title={selectedCategory?.id !== 0 ? "Edit Category" : "Add Category"}
+        open={!!selectedCategory}
+        onCancel={() => setSelectedCategory(null)}
         footer={null}
       >
-        <ReusableForm
-          key={editingCategory ? editingCategory.id : "new"}
-          fields={fields}
-          initialValues={editingCategory}
-          onSubmit={handleSubmit}
-          isLoading={isLoadingCreate || isLoadingUpdate}
-        />
+        <FormWrapper form={form} onSubmit={handleSubmit}>
+          <FormInputText
+            name="name"
+            defaultValue={selectedCategory?.name}
+            placeholder="Category name"
+          />
+
+          <FormButton
+            loading={isLoadingCreate || isLoadingUpdate}
+            disabled={isLoadingCreate || isLoadingUpdate}
+          >
+            Submit
+          </FormButton>
+        </FormWrapper>
       </Modal>
     </div>
   );

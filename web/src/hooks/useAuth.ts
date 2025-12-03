@@ -1,16 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authService } from "../services/authService";
+import z from "zod";
+import { ApiResponse, ErrorResponse } from "../interface/interfaces";
 
-// ---- API ----
+// Schema login
+export const loginSchema = z.object({
+  username: z.string().nonempty("Username required"),
+  password: z.string().nonempty("Password required"),
+});
+
+export type ILoginFormInputs = z.infer<typeof loginSchema>;
+
 export const useAuth = (opts?: {
-  onSuccess?: (type: "login" | "logout") => void;
-  onError?: (type: "login" | "logout", err: any) => void;
+  onSuccess?: (res?: ApiResponse<ILoginFormInputs> | ApiResponse<null>) => void;
+  onError?: (err: ErrorResponse) => void;
   enabled?: boolean;
 }) => {
   const qc = useQueryClient();
 
+  // GET profile
   const {
-    data: profileData = [],
+    data: profileData,
     isLoading,
     error,
   } = useQuery({
@@ -21,29 +31,30 @@ export const useAuth = (opts?: {
 
   const login = useMutation({
     mutationFn: authService.login,
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["profile"] });
-      opts?.onSuccess?.("login");
+      opts?.onSuccess?.(res);
     },
-    onError: (err) => opts?.onError?.("login", err),
+    onError: (err: unknown) => opts?.onError?.(err as ErrorResponse),
   });
 
   const logout = useMutation({
     mutationFn: authService.logout,
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["profile"] });
-      opts?.onSuccess?.("logout");
+      opts?.onSuccess?.(res);
     },
-    onError: (err) => opts?.onError?.("logout", err),
+    onError: (err: unknown) => opts?.onError?.(err as ErrorResponse),
   });
 
   return {
-    profileData,
+    profileData: profileData?.data,
     isProfileLoading: isLoading,
     isProfileError: error,
 
     login: login.mutate,
     isLoadingLogin: login.isPending,
+
     logout: logout.mutate,
   };
 };

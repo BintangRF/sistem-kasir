@@ -1,9 +1,37 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { transactionsService } from "../services/transactionsService";
+import z from "zod";
+import { ApiResponse, ErrorResponse } from "../interface/interfaces";
+
+// Schema
+export const itemSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  price: z.number().nonnegative(),
+  quantity: z.number().int().nonnegative().optional(),
+});
+
+export const transactionsSchema = z
+  .object({
+    buyerName: z.string().nonempty("Name required"),
+    amountReceived: z.number(),
+    totalAmount: z.number(),
+    change: z.number().optional(),
+  })
+  .refine((v) => v.amountReceived >= v.totalAmount, {
+    message:
+      "The amount of money not received may be less than the total payment.",
+    path: ["amountReceived"],
+  });
+
+export type ITransactionsFormInputs = z.infer<typeof transactionsSchema>;
+export type ICashierItemList = z.infer<typeof itemSchema>;
+
+type SuccessPayload = ApiResponse<ITransactionsFormInputs> | ApiResponse<null>;
 
 export const useTransactions = (opts?: {
-  onSuccess?: (type: "create") => void;
-  onError?: (type: "create", err: any) => void;
+  onSuccess?: (res?: SuccessPayload) => void;
+  onError?: (err: ErrorResponse) => void;
 }) => {
   const qc = useQueryClient();
 
@@ -16,13 +44,19 @@ export const useTransactions = (opts?: {
     queryFn: transactionsService.fetch,
   });
 
-  const createTransaction = useMutation({
+  const createTransaction = useMutation<
+    SuccessPayload,
+    ErrorResponse,
+    ITransactionsFormInputs
+  >({
     mutationFn: transactionsService.create,
-    onSuccess: () => {
+    onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["transactions"] });
-      opts?.onSuccess?.("create");
+      opts?.onSuccess?.(res);
     },
-    onError: (err) => opts?.onError?.("create", err),
+    onError: (err) => {
+      opts?.onError?.(err);
+    },
   });
 
   return {
@@ -31,7 +65,6 @@ export const useTransactions = (opts?: {
     error,
 
     createTransaction: createTransaction.mutate,
-    errorMutate: createTransaction.isError,
     isLoadingMutate: createTransaction.isPending,
   };
 };

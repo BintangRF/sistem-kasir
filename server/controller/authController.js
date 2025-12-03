@@ -22,9 +22,9 @@ exports.authLogin = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ message: "Login Success!" });
+    return res.json({ data: token, message: "Login Success!" });
   } catch (error) {
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ data: null, message: "Server error" });
   }
 };
 
@@ -35,14 +35,16 @@ exports.authLogout = (req, res) => {
     sameSite: "lax",
   });
 
-  return res.json({ message: "Logout success" });
+  return res.json({ data: null, message: "Logout success" });
 };
 
 exports.authProfile = (req, res) => {
   const user = req.user;
 
-  res.json({
+  const dataUser = {
     id: user.id,
-    username: user.username,
-  });
+    username: user.user,
+  };
+
+  res.json({ data: dataUser, message: "Data user fetch successfully" });
 };
