@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { authService } from "../services/authService";
-import { ApiResponse, ILogoutResponseProps } from "../interface/interfaces";
+import { ApiResponse } from "../interface/interfaces";
 import { useGetQuery } from "./useQuery/useGetQuery";
 import { useMutateQuery } from "./useQuery/useMutateQuery";
 
@@ -13,9 +13,7 @@ export const loginSchema = z.object({
 export type ILoginFormInputs = z.infer<typeof loginSchema>;
 
 type SuccessLoginPayload = ApiResponse<ILoginFormInputs> | ApiResponse<null>;
-type SuccessLogoutPayload =
-  | ApiResponse<ILogoutResponseProps>
-  | ApiResponse<null>;
+type SuccessLogoutPayload = ApiResponse<null>;
 
 export const useAuth = () => {
   const profileQuery = useGetQuery(["profile"], authService.fetch);
@@ -27,7 +25,7 @@ export const useAuth = () => {
     }
   );
 
-  const logout = useMutateQuery<SuccessLogoutPayload, ILogoutResponseProps>(
+  const logout = useMutateQuery<SuccessLogoutPayload, null>(
     authService.logout,
     {
       invalidateKey: ["profile"],

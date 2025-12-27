@@ -44,8 +44,3 @@ export interface ITransactionResponseProps {
   transactionDate: Date;
   items: IItemTransactionsProps[];
 }
-
-export interface ILogoutResponseProps {
-  data?: string;
-  message?: string;
-}

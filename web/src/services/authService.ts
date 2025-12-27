@@ -1,10 +1,6 @@
 // itemService.ts
 import { ILoginFormInputs } from "../hooks/useAuth";
-import {
-  ApiResponse,
-  ILogoutResponseProps,
-  IProfileResponseProps,
-} from "../interface/interfaces";
+import { ApiResponse, IProfileResponseProps } from "../interface/interfaces";
 import { api } from "../lib/api";
 
 export const authService = {
@@ -16,8 +12,5 @@ export const authService = {
       payload
     ),
 
-  logout: () =>
-    api.post<ApiResponse<ILogoutResponseProps>, ILogoutResponseProps>(
-      "/api/auth/logout"
-    ),
+  logout: () => api.post<ApiResponse<null>, null>("/api/auth/logout"),
 };

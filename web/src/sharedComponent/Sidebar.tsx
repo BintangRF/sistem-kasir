@@ -17,21 +17,7 @@ const { Sider } = Layout;
 const Sidebar = () => {
   const navigate = useNavigate();
 
-  const { logout } = useAuth({
-    onSuccess: () => {
-      navigate("/login");
-      localStorage.removeItem("isLogin");
-    },
-    onError: (err) => {
-      console.error(err);
-      const msg = err?.response?.data?.message ?? "Error";
-
-      NotifAlert({
-        type: "error",
-        message: msg,
-      });
-    },
-  });
+  const { logout } = useAuth();
 
   const location = useLocation();
 
@@ -70,7 +56,12 @@ const Sidebar = () => {
 
   const handleMenuClick = (e: { key: string }) => {
     if (e.key === "logout") {
-      logout();
+      logout(null, {
+        onSuccess: () => {
+          localStorage.removeItem("isLogin");
+          navigate("/login");
+        },
+      });
     }
   };
 
