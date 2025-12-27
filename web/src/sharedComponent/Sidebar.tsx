@@ -7,6 +7,7 @@ import {
   AppstoreOutlined,
   OrderedListOutlined,
   LogoutOutlined,
+  BarChartOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../hooks/useAuth";
 import { NotifAlert } from "./NotifAlert";
@@ -21,10 +22,13 @@ const Sidebar = () => {
       navigate("/login");
       localStorage.removeItem("isLogin");
     },
-    onError: (_, err) => {
+    onError: (err) => {
+      console.error(err);
+      const msg = err?.response?.data?.message ?? "Error";
+
       NotifAlert({
         type: "error",
-        message: err.message ?? "Logout error",
+        message: msg,
       });
     },
   });
@@ -51,6 +55,11 @@ const Sidebar = () => {
       key: "/cashier",
       icon: <UserOutlined />,
       label: <Link to="/cashier">Cashier</Link>,
+    },
+    {
+      key: "/transaction-graph",
+      icon: <BarChartOutlined />,
+      label: <Link to="/transaction-graph">Transaction Graph</Link>,
     },
     {
       key: "logout",

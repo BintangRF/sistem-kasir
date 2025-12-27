@@ -23,8 +23,6 @@ export const Transaction: React.FC = () => {
     )
   );
 
-  console.log(transactionsData);
-
   const columns = [
     {
       title: "Buyer Name",
@@ -75,14 +73,10 @@ export const Transaction: React.FC = () => {
 
   if (isLoading) return <p>Loading...</p>;
 
-  // Transform transactionData to an array
-  const dataSource: ITransactionResponseProps[] =
-    Object.values(transactionsData);
-
   return (
     <div>
       <h2>Data Transaksi</h2>
-      <ReusableTable data={dataSource} columns={columns} showExport />;
+      <ReusableTable data={transactionsData} columns={columns} showExport />;
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { Item } from "./pages/Item";
 import Login from "./pages/Login";
 import { Category } from "./pages/Category";
 import { useAuth } from "./hooks/useAuth";
+import { TransactionGraph } from "./pages/TransactionGraph";
 
 const { Content, Sider } = Layout;
 
@@ -61,6 +62,10 @@ function App() {
                 <Route
                   path="/cashier"
                   element={<PrivateRoute element={<Cashier />} />}
+                />
+                <Route
+                  path="/transaction-graph"
+                  element={<PrivateRoute element={<TransactionGraph />} />}
                 />
               </Routes>
             </Col>
