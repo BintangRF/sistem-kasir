@@ -1,12 +1,23 @@
 // itemService.ts
 import { ILoginFormInputs } from "../hooks/useAuth";
-import { axiosInstance } from "../utils/axiosInstance";
+import {
+  ApiResponse,
+  ILogoutResponseProps,
+  IProfileResponseProps,
+} from "../interface/interfaces";
+import { api } from "../lib/api";
 
 export const authService = {
-  fetch: () => axiosInstance.get("/api/auth/profile").then((res) => res.data),
+  fetch: () => api.get<IProfileResponseProps>("/api/auth/profile"),
 
   login: (payload: ILoginFormInputs) =>
-    axiosInstance.post("/api/auth/login", payload).then((res) => res.data),
+    api.post<ApiResponse<ILoginFormInputs>, ILoginFormInputs>(
+      "/api/auth/login",
+      payload
+    ),
 
-  logout: () => axiosInstance.post(`/api/auth/logout`).then((res) => res.data),
+  logout: () =>
+    api.post<ApiResponse<ILogoutResponseProps>, ILogoutResponseProps>(
+      "/api/auth/logout"
+    ),
 };

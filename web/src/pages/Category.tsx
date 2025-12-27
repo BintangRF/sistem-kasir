@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Modal } from "antd";
 import { ReusableTable } from "../sharedComponent/ReusableTable";
 import {
@@ -6,7 +6,6 @@ import {
   ICategoriesFormInputs,
   useCategories,
 } from "../hooks/useCategories";
-import { NotifAlert } from "../sharedComponent/NotifAlert";
 import { FormButton } from "../sharedComponent/FormButton";
 import { FormWrapper } from "../sharedComponent/FormWrapper";
 import { FormInputText } from "../sharedComponent/FormInputText";
@@ -23,16 +22,7 @@ export const Category = () => {
     isLoading,
     isLoadingCreate,
     isLoadingUpdate,
-  } = useCategories({
-    onSuccess: (res) =>
-      NotifAlert({ type: "success", message: res?.message ?? "Success" }),
-
-    onError: (err) =>
-      NotifAlert({
-        type: "error",
-        message: err?.response?.data?.message ?? "Error",
-      }),
-  });
+  } = useCategories();
 
   const columns = [
     {

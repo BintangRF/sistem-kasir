@@ -1,7 +1,6 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { ILoginFormInputs, loginSchema, useAuth } from "../hooks/useAuth";
-import { NotifAlert } from "../sharedComponent/NotifAlert";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormWrapper } from "../sharedComponent/FormWrapper";
@@ -12,34 +11,19 @@ import { FormInputPassword } from "../sharedComponent/FormInputPassword";
 const Login: React.FC = () => {
   const navigate = useNavigate();
 
-  const { login, isLoadingLogin } = useAuth({
-    onSuccess: (res) => {
-      NotifAlert({
-        type: "success",
-        message: res?.message ?? "Success",
-      });
-
-      localStorage.setItem("isLogin", "true");
-      navigate("/");
-    },
-
-    onError: (err) => {
-      console.error(err);
-      const msg = err?.response?.data?.message ?? "Error";
-
-      NotifAlert({
-        type: "error",
-        message: msg,
-      });
-    },
-  });
+  const { login, isLoadingLogin } = useAuth();
 
   const form = useForm<ILoginFormInputs>({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = (data: ILoginFormInputs) => {
-    login(data);
+    login(data, {
+      onSuccess: () => {
+        localStorage.setItem("isLogin", "true");
+        navigate("/");
+      },
+    });
   };
 
   return (

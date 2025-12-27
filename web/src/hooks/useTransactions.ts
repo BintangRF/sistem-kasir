@@ -1,9 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 import { transactionsService } from "../services/transactionsService";
-import z from "zod";
-import { ApiResponse, ErrorResponse } from "../interface/interfaces";
+import { ApiResponse } from "../interface/interfaces";
+import { useGetQuery } from "./useQuery/useGetQuery";
+import { useMutateQuery } from "./useQuery/useMutateQuery";
 
-// Schema
 export const itemSchema = z.object({
   id: z.number(),
   name: z.string(),
@@ -13,14 +13,13 @@ export const itemSchema = z.object({
 
 export const transactionsSchema = z
   .object({
-    buyerName: z.string().nonempty("Name required"),
+    buyerName: z.string().nonempty(),
     amountReceived: z.number(),
     totalAmount: z.number(),
     change: z.number().optional(),
   })
   .refine((v) => v.amountReceived >= v.totalAmount, {
-    message:
-      "The amount of money not received may be less than the total payment.",
+    message: "Amount received must be greater or equal to total amount",
     path: ["amountReceived"],
   });
 
@@ -29,40 +28,23 @@ export type ICashierItemList = z.infer<typeof itemSchema>;
 
 type SuccessPayload = ApiResponse<ITransactionsFormInputs> | ApiResponse<null>;
 
-export const useTransactions = (opts?: {
-  onSuccess?: (res?: SuccessPayload) => void;
-  onError?: (err: ErrorResponse) => void;
-}) => {
-  const qc = useQueryClient();
+export const useTransactions = () => {
+  const transactionsQuery = useGetQuery(
+    ["transactions"],
+    transactionsService.fetch
+  );
 
-  const {
-    data: transactionsData = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: transactionsService.fetch,
-  });
-
-  const createTransaction = useMutation<
+  const createTransaction = useMutateQuery<
     SuccessPayload,
-    ErrorResponse,
     ITransactionsFormInputs
-  >({
-    mutationFn: transactionsService.create,
-    onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["transactions"] });
-      opts?.onSuccess?.(res);
-    },
-    onError: (err) => {
-      opts?.onError?.(err);
-    },
+  >(transactionsService.create, {
+    invalidateKey: ["transactions"],
   });
 
   return {
-    transactionsData,
-    isLoading,
-    error,
+    transactionsData: transactionsQuery.data ?? [],
+    isLoading: transactionsQuery.isLoading,
+    error: transactionsQuery.error,
 
     createTransaction: createTransaction.mutate,
     isLoadingMutate: createTransaction.isPending,

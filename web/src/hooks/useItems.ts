@@ -1,17 +1,18 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 import { itemService } from "../services/itemsService";
-import z from "zod";
-import { ApiResponse, ErrorResponse } from "../interface/interfaces";
+import { ApiResponse } from "../interface/interfaces";
+import { useGetQuery } from "./useQuery/useGetQuery";
+import { useMutateQuery } from "./useQuery/useMutateQuery";
 
 // Schema
 export const itemsSchema = z.object({
   id: z.number().optional(),
   name: z.string().nonempty("Name is required"),
-  price: z.number().min(1, "Price must be greater than 0"),
+  price: z.number().min(1),
   categoryId: z.number(),
   category: z
     .object({
-      name: z.string().nonempty("Category name is required"),
+      name: z.string(),
     })
     .optional(),
 });
@@ -20,68 +21,34 @@ export type IItemsFormInputs = z.infer<typeof itemsSchema>;
 
 type SuccessPayload = ApiResponse<IItemsFormInputs> | ApiResponse<null>;
 
-interface UseItemsOptions {
-  onSuccess?: (res: SuccessPayload) => void;
-  onError?: (err: ErrorResponse) => void;
-}
+export const useItems = () => {
+  const itemsQuery = useGetQuery(["items"], itemService.fetch);
 
-export const useItems = (opts?: UseItemsOptions) => {
-  const qc = useQueryClient();
+  const createItem = useMutateQuery<SuccessPayload, IItemsFormInputs>(
+    itemService.create,
+    {
+      invalidateKey: ["items"],
+    }
+  );
 
-  const {
-    data: itemsData = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["items"],
-    queryFn: itemService.fetch,
-  });
+  const updateItem = useMutateQuery<SuccessPayload, IItemsFormInputs>(
+    itemService.update,
+    {
+      invalidateKey: ["items"],
+    }
+  );
 
-  const createItem = useMutation<
-    SuccessPayload,
-    ErrorResponse,
-    IItemsFormInputs
-  >({
-    mutationFn: itemService.create,
-    onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["items"] });
-      opts?.onSuccess?.(res);
-    },
-    onError: (err) => {
-      opts?.onError?.(err);
-    },
-  });
-
-  const updateItem = useMutation<
-    SuccessPayload,
-    ErrorResponse,
-    IItemsFormInputs
-  >({
-    mutationFn: itemService.update,
-    onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["items"] });
-      opts?.onSuccess?.(res);
-    },
-    onError: (err) => {
-      opts?.onError?.(err);
-    },
-  });
-
-  const deleteItem = useMutation<SuccessPayload, ErrorResponse, number>({
-    mutationFn: itemService.delete,
-    onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["items"] });
-      opts?.onSuccess?.(res);
-    },
-    onError: (err) => {
-      opts?.onError?.(err);
-    },
-  });
+  const deleteItem = useMutateQuery<SuccessPayload, number>(
+    itemService.delete,
+    {
+      invalidateKey: ["items"],
+    }
+  );
 
   return {
-    itemsData,
-    isLoading,
-    error,
+    itemsData: itemsQuery.data ?? [],
+    isLoading: itemsQuery.isLoading,
+    error: itemsQuery.error,
 
     createItem: createItem.mutate,
     updateItem: updateItem.mutate,
@@ -89,5 +56,6 @@ export const useItems = (opts?: UseItemsOptions) => {
 
     isLoadingCreate: createItem.isPending,
     isLoadingUpdate: updateItem.isPending,
+    isLoadingDelete: deleteItem.isPending,
   };
 };

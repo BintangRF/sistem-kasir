@@ -4,7 +4,6 @@ import { IItemsFormInputs, itemsSchema, useItems } from "../hooks/useItems";
 import { ReusableTable } from "../sharedComponent/ReusableTable";
 import { formatNumber } from "../utils/formatNumber";
 import { useCategories } from "../hooks/useCategories";
-import { NotifAlert } from "../sharedComponent/NotifAlert";
 import { FormWrapper } from "../sharedComponent/FormWrapper";
 import { FormInputText } from "../sharedComponent/FormInputText";
 import { FormInputSelect } from "../sharedComponent/FormInputSelect";
@@ -23,21 +22,7 @@ export const Item = () => {
     isLoading,
     isLoadingCreate,
     isLoadingUpdate,
-  } = useItems({
-    onSuccess: (res) => {
-      NotifAlert({ type: "success", message: res?.message ?? "Success" });
-    },
-
-    onError: (err) => {
-      console.error(err);
-      const msg = err?.response?.data?.message ?? "Error";
-
-      NotifAlert({
-        type: "error",
-        message: msg,
-      });
-    },
-  });
+  } = useItems();
 
   const { categoriesData, isLoading: isLoadingCategories } = useCategories();
 

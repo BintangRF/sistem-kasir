@@ -1,14 +1,16 @@
-// transactionsService.ts
+import { api } from "../lib/api";
 import { ITransactionsFormInputs } from "../hooks/useTransactions";
-
-import { axiosInstance } from "../utils/axiosInstance";
+import {
+  ApiResponse,
+  ITransactionResponseProps,
+} from "../interface/interfaces";
 
 export const transactionsService = {
-  fetch: () =>
-    axiosInstance.get("/api/transactions").then((res) => res.data.data),
+  fetch: () => api.get<ITransactionResponseProps[]>("/api/transactions"),
 
   create: (payload: ITransactionsFormInputs) =>
-    axiosInstance
-      .post("/api/transactions/create", payload)
-      .then((res) => res.data),
+    api.post<ApiResponse<ITransactionsFormInputs>, ITransactionsFormInputs>(
+      "/api/transactions/create",
+      payload
+    ),
 };

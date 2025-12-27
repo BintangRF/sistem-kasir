@@ -1,18 +1,22 @@
-// itemService.ts
+import { api } from "../lib/api";
 import { IItemsFormInputs } from "../hooks/useItems";
-import { axiosInstance } from "../utils/axiosInstance";
+import { ApiResponse, IItemResponseProps } from "../interface/interfaces";
 
 export const itemService = {
-  fetch: () => axiosInstance.get("/api/items").then((res) => res.data.data),
+  fetch: () => api.get<IItemResponseProps[]>("/api/items"),
 
   create: (payload: IItemsFormInputs) =>
-    axiosInstance.post("/api/items/create", payload).then((res) => res.data),
+    api.post<ApiResponse<IItemsFormInputs>, IItemsFormInputs>(
+      "/api/items/create",
+      payload
+    ),
 
   update: (payload: IItemsFormInputs) =>
-    axiosInstance
-      .put(`/api/items/update/${payload.id}`, payload)
-      .then((res) => res.data),
+    api.put<ApiResponse<IItemsFormInputs>, IItemsFormInputs>(
+      `/api/items/update/${payload.id}`,
+      payload
+    ),
 
   delete: (id: number) =>
-    axiosInstance.delete(`/api/items/delete/${id}`).then((res) => res.data),
+    api.delete<ApiResponse<null>>(`/api/items/delete/${id}`),
 };

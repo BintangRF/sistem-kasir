@@ -24,25 +24,7 @@ export const Payment: React.FC = () => {
     clearSelectedItems,
   } = useCashier();
 
-  const { createTransaction, isLoadingMutate } = useTransactions({
-    onSuccess: (res) => {
-      clearSelectedItems();
-      handlePaymentSuccess();
-      NotifAlert({
-        type: "success",
-        message: res?.message ?? "Success",
-      });
-    },
-    onError: (err) => {
-      console.error(err);
-      const msg = err?.response?.data?.message ?? "Error";
-
-      NotifAlert({
-        type: "error",
-        message: msg,
-      });
-    },
-  });
+  const { createTransaction, isLoadingMutate } = useTransactions();
 
   const form = useForm<ITransactionsFormInputs>({
     resolver: zodResolver(transactionsSchema),
@@ -77,7 +59,12 @@ export const Payment: React.FC = () => {
       return;
     }
 
-    createTransaction(payload);
+    createTransaction(payload, {
+      onSuccess: () => {
+        clearSelectedItems();
+        handlePaymentSuccess();
+      },
+    });
   };
 
   return (

@@ -1,7 +1,8 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
 import { categoriesService } from "../services/categoriesService";
-import z from "zod";
-import { ApiResponse, ErrorResponse } from "../interface/interfaces";
+import { ApiResponse } from "../interface/interfaces";
+import { useGetQuery } from "./useQuery/useGetQuery";
+import { useMutateQuery } from "./useQuery/useMutateQuery";
 
 export const categoriesSchema = z.object({
   id: z.number().optional(),
@@ -12,59 +13,33 @@ export type ICategoriesFormInputs = z.infer<typeof categoriesSchema>;
 
 type SuccessPayload = ApiResponse<ICategoriesFormInputs> | ApiResponse<null>;
 
-// ---- API ----
-export const useCategories = (opts?: {
-  onSuccess?: (res?: SuccessPayload) => void;
-  onError?: (err: ErrorResponse) => void;
-}) => {
-  const qc = useQueryClient();
-
+export const useCategories = () => {
   const {
     data: categoriesData = [],
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ["categories"],
-    queryFn: categoriesService.fetch,
-  });
+  } = useGetQuery(["categories"], categoriesService.fetch);
 
-  const createCategory = useMutation<
-    SuccessPayload,
-    ErrorResponse,
-    ICategoriesFormInputs
-  >({
-    mutationFn: categoriesService.create,
-    onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["categories"] });
-      opts?.onSuccess?.(res);
-    },
+  const createCategory = useMutateQuery<SuccessPayload, ICategoriesFormInputs>(
+    categoriesService.create,
+    {
+      invalidateKey: ["categories"],
+    }
+  );
 
-    onError: (err: unknown) => opts?.onError?.(err as ErrorResponse),
-  });
+  const updateCategory = useMutateQuery<SuccessPayload, ICategoriesFormInputs>(
+    categoriesService.update,
+    {
+      invalidateKey: ["categories"],
+    }
+  );
 
-  const updateCategory = useMutation<
-    SuccessPayload,
-    ErrorResponse,
-    ICategoriesFormInputs
-  >({
-    mutationFn: categoriesService.update,
-    onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["categories"] });
-      opts?.onSuccess?.(res);
-    },
-
-    onError: (err: unknown) => opts?.onError?.(err as ErrorResponse),
-  });
-
-  const deleteCategory = useMutation<SuccessPayload, ErrorResponse, number>({
-    mutationFn: categoriesService.delete,
-    onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ["categories"] });
-      opts?.onSuccess?.(res);
-    },
-
-    onError: (err: unknown) => opts?.onError?.(err as ErrorResponse),
-  });
+  const deleteCategory = useMutateQuery<SuccessPayload, number>(
+    categoriesService.delete,
+    {
+      invalidateKey: ["categories"],
+    }
+  );
 
   return {
     categoriesData,
@@ -76,6 +51,7 @@ export const useCategories = (opts?: {
     deleteCategory: deleteCategory.mutate,
 
     isLoadingCreate: createCategory.isPending,
-    isLoadingUpdate: createCategory.isPending,
+    isLoadingUpdate: updateCategory.isPending,
+    isLoadingDelete: deleteCategory.isPending,
   };
 };
